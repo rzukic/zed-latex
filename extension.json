@@ -1,6 +1,6 @@
 {
   "name": "LaTeX",
-  "version": "0.1",
+  "version": "0.0.1",
   "authors": ["Ruben Zukic <ruben@zukic.net>"],
   "description": "LaTeX syntax highlighting for Zed",
   "repository": "https://github.com/rzukic/zed-latex",
