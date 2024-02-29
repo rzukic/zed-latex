@@ -41,16 +41,16 @@
 
 ; General environments
 (begin
-  command: _ @markup.environment
+  command: _ @keyword.import
   name:
     (curly_group_text
-      (text) @markup.environment.name))
+      (text) @string))
 
 (end
-  command: _ @markup.environment
+  command: _ @keyword.import
   name:
     (curly_group_text
-      (text) @markup.environment.name))
+      (text) @string))
 
 ; Definitions and references
 (new_command_definition
@@ -178,82 +178,82 @@
 
 ; Sectioning
 (title_declaration
-  command: _ @module
+  command: _ @function.macro
   options:
     (brack_group
-      (_) @markup.heading.1)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.1))
+      (_) @function))
 
 (author_declaration
-  command: _ @module
+  command: _ @function.macro
   authors:
     (curly_group_author_list
-      (author)+ @markup.heading.1))
+      (author)+ @function))
 
 (chapter
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.2)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.2))
+      (_) @function))
 
 (part
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.2)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.2))
+      (_) @function))
 
 (section
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.3)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.3))
+      (_) @function))
 
 (subsection
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.4)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.4))
+      (_) @function))
 
 (subsubsection
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.5)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.5))
+      (_) @function))
 
 (paragraph
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.6)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.6))
+      (_) @function))
 
 (subparagraph
-  command: _ @module
+  command: _ @function.macro
   toc:
     (brack_group
-      (_) @markup.heading.6)?
+      (_) @function)?
   text:
     (curly_group
-      (_) @markup.heading.6))
+      (_) @function))
 
 ; Beamer frames
 (generic_environment
@@ -301,7 +301,6 @@
     (curly_group
       (_) @markup.link.url))
   (#any-of? @_name "\\url" "\\href"))
-
 ; File inclusion commands
 (class_include
   command: _ @keyword.import

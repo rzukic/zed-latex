@@ -2,10 +2,14 @@ name = "LaTeX"
 grammar = "latex"
 path_suffixes = ["tex"]
 line_comments = ["%"]
-autoclose_before = "}])"
+autoclose_before = "\"}])'`"
 brackets = [
     { start = "{", end = "}", close = true, newline = false },
     { start = "[", end = "]", close = true, newline = false },
     { start = "(", end = ")", close = true, newline = false },
     { start = "$", end = "$", close = true, newline = false },
+    { start = "\"", end = "\"", close = true, newline = false },
+    { start = "'", end = "'", close = true, newline = false },
+    { start = "`", end = "`", close = true, newline = false },
+    { start = "``", end = "''", close = true, newline = false },
 ]
