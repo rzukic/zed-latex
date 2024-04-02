@@ -1,0 +1,17 @@
+id = "latex"
+name = "LaTeX"
+version = "0.0.2"
+authors = [
+    "Ruben Zukic <ruben@zukic.net>",
+    "Oli Callaghan <me@olicallaghan.com>",
+]
+description = "LaTeX language server and syntax highlighting for Zed"
+repository = "https://github.com/rzukic/zed-latex"
+
+[language_servers.texlab]
+name = "TexLab (Latex Language Server)"
+language = "LaTeX"
+
+[grammars.latex]
+repository = "https://github.com/latex-lsp/tree-sitter-latex"
+commit = "841f89ffbba9650529a40fb867f3456bf92bf9b1"
