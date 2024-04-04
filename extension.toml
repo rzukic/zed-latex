@@ -1,6 +1,7 @@
 id = "latex"
 name = "LaTeX"
 version = "0.0.2"
+schema_version = 1
 authors = [
     "Ruben Zukic <ruben@zukic.net>",
     "Oli Callaghan <me@olicallaghan.com>",
