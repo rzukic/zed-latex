@@ -5,6 +5,7 @@ schema_version = 1
 authors = [
     "Ruben Zukic <ruben@zukic.net>",
     "Oli Callaghan <me@olicallaghan.com>",
+    "Luke Naylor <luke.naylr@gmail.com>"
 ]
 description = "LaTeX language server and syntax highlighting for Zed"
 repository = "https://github.com/rzukic/zed-latex"
