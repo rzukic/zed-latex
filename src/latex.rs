@@ -9,7 +9,7 @@ impl zed::Extension for LatexExtension {
 
     fn language_server_command(
         &mut self,
-        _config: zed::LanguageServerConfig,
+        _config: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> zed::Result<zed::Command> {
         let path = worktree
@@ -21,6 +21,30 @@ impl zed::Extension for LatexExtension {
             args: vec![],
             env: Default::default(),
         })
+    }
+
+    fn language_server_workspace_configuration(
+        &mut self,
+        _language_server_id: &zed::LanguageServerId,
+        worktree: &zed::Worktree,
+    ) -> zed::Result<Option<zed::serde_json::Value>> {
+        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
+            .ok()
+            .and_then(|lsp_settings| lsp_settings.settings.clone())
+            .unwrap_or_default();
+        Ok(Some(settings))
+    }
+
+    fn language_server_initialization_options(
+            &mut self,
+            _language_server_id: &zed::LanguageServerId,
+            worktree: &zed::Worktree,
+        ) -> zed::Result<Option<zed::serde_json::Value>> {
+        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
+            .ok()
+            .and_then(|lsp_settings| lsp_settings.initialization_options.clone())
+            .unwrap_or_default();
+        Ok(Some(settings))
     }
 }
 
