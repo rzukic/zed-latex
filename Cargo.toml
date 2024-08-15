@@ -1,6 +1,6 @@
 [package]
 name = "latex"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 
 [lib]
@@ -8,4 +8,4 @@ path = "src/latex.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-zed_extension_api = "0.0.5"
+zed_extension_api = "0.0.6"
