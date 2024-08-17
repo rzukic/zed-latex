@@ -1,6 +1,6 @@
 name = "LaTeX"
 grammar = "latex"
-path_suffixes = ["tex"]
+path_suffixes = ["tex", "latex", "sty", "cls"]
 line_comments = ["%"]
 autoclose_before = "\"}])'`"
 brackets = [
