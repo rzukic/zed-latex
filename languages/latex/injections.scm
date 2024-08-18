@@ -31,3 +31,15 @@
         (text) @_env))) @content
   (#set! "language" "c")
   (#any-of? @_env "asy" "asydef"))
+
+(generic_command
+  command: (_) @_command
+  arg: (curly_group (_) @content)
+  (#set! "language" "python")
+  (#eq? @_command "\\sage"))
+
+(generic_command
+  command: (_) @_command
+  arg: (curly_group (_) @content)
+  (#set! "language" "lua")
+  (#any-of? @_command "\\directlua" "\\latelua"))
