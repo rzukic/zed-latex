@@ -10,70 +10,53 @@
 (chapter
   command: _ @context
   !toc
-  text:
-    (curly_group
-      (_) @name)) @item
+  text: _ @name) @item
 
 (chapter
   command: _ @context
-  toc:
-    (brack_group
-      (_) @name)) @item
+  toc: _ @name) @item
 
 ; PART DECLARATIONS
 
 (part
   command: _ @context
-  toc:
-    (brack_group
-      (_) @name)) @item
+  toc: _ @name) @item
 
 (part
   command: _ @context
   !toc
-  text:
-    (curly_group
-      (_) @name)) @item
+  text: _ @name) @item
 
 ; SECTION DECLARATIONS
 
 (section
   command: _ @context
-  toc:
-    (brack_group (_) @name)) @item
+  toc: _ @name) @item
 
 (section
   command: _ @context
   !toc
-  text:
-    (curly_group
-      (_) @name )) @item
+  text: _ @name) @item
 
 ; SUBSECTION DECLARATIONS
 
 (subsection
   command: _ @context
-  toc:
-    (brack_group (_) @name)) @item
+  toc: _ @name) @item
 
 (subsection
   command: _ @context
   !toc
-  text:
-    (curly_group
-      (_) @name )) @item
+  text: _ @name) @item
 
 ; SUBSUBSECTION DECLARATIONS
 
 (subsubsection
   command: _ @context
-  toc:
-    (brack_group (_) @name)) @item
+  toc: _ @name) @item
 
 (subsubsection
   command: _ @context
   !toc
-  text:
-    (curly_group
-      (_) @name )) @item
+  text: _ @name) @item
 
