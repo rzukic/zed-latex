@@ -1,8 +1,13 @@
-use zed_extension_api as zed;
+mod preview_presets;
+mod texlab_settings;
+use preview_presets::*;
+use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
+use zed_extension_api::{self as zed, serde_json};
 
 #[derive(Default)]
 struct LatexExtension {
     cached_texlab_path: Option<String>,
+    previewer: Option<Preview>,
 }
 
 impl zed::Extension for LatexExtension {
@@ -63,6 +68,12 @@ impl zed::Extension for LatexExtension {
         let binary_path = acquire_latest_texlab(language_server_id)?;
         self.cached_texlab_path = Some(binary_path.clone());
 
+        // Check for the existence of a previewer
+        // (this has nothing to do with the language server but this
+        // is a convenient place to minimize the number of times this
+        // is done)
+        self.previewer = Preview::determine(worktree);
+
         Ok(zed::Command {
             command: binary_path,
             args: vec![],
@@ -79,7 +90,48 @@ impl zed::Extension for LatexExtension {
             .ok()
             .and_then(|lsp_settings| lsp_settings.settings.clone())
             .unwrap_or_default();
-        Ok(Some(settings))
+
+        if let Ok(WorkspaceSettings {
+            texlab: texlab_settings,
+        }) = serde_json::from_value(settings.clone())
+        {
+            match texlab_settings {
+                // User has provided forward search settings, do not override
+                Some(TexlabSettings {
+                    forward_search: Some(_),
+                    ..
+                }) => Ok(Some(settings)),
+                // No settings provided
+                None => Ok(Some(
+                    serde_json::to_value(WorkspaceSettings {
+                        texlab: Some(TexlabSettings {
+                            build: Some(TexlabBuildSettings::build_and_search_on()),
+                            forward_search: Some(Preview::Zathura.create_preset()),
+                            ..Default::default()
+                        }),
+                    })
+                    .unwrap_or_default(),
+                )),
+                Some(texlab_settings_without_forward_search) => Ok(Some(
+                    serde_json::to_value(WorkspaceSettings {
+                        texlab: Some(TexlabSettings {
+                            forward_search: Some(Preview::Zathura.create_preset()),
+                            build: Some(
+                                texlab_settings_without_forward_search
+                                    .build
+                                    .unwrap_or_default()
+                                    .switch_on_onsave_fields_if_not_set(),
+                            ),
+                            ..texlab_settings_without_forward_search
+                        }),
+                    })
+                    .unwrap_or_default(),
+                )),
+            }
+        } else {
+            let x = settings.to_string();
+            Err(format!("issue deserializing workspace settings: {x}"))
+        }
     }
 
     fn language_server_initialization_options(
