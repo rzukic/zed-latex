@@ -12,7 +12,7 @@ pub enum Preview {
 }
 
 impl Preview {
-    pub fn create_preset(self) -> TexlabForwardSearchSettings {
+    pub fn create_preset(&self) -> TexlabForwardSearchSettings {
         match self {
             Preview::Zathura => TexlabForwardSearchSettings {
                 executable: Some("zathura".to_string()),
