@@ -35,6 +35,19 @@ impl Preview {
                     "%f".to_string(),
                 ]),
             },
+            Preview::Sioyek => TexlabForwardSearchSettings {
+                executable: Some("sioyek".to_string()),
+                args: Some(vec![
+                    "--reuse-window".to_string(),
+                    "--inverse-search".to_string(),
+                    "zed %1:%2".to_string(),
+                    "--forward-search-file".to_string(),
+                    "%f".to_string(),
+                    "--forward-search-line".to_string(),
+                    "%l".to_string(),
+                    "%p".to_string(),
+                ]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
