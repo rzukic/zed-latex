@@ -24,6 +24,17 @@ impl Preview {
                     "%p".to_string(),
                 ]),
             },
+            Preview::Skim => TexlabForwardSearchSettings {
+                executable: Some(
+                    "/Applications/Skim.app/Contents/SharedSupport/displayline".to_string(),
+                ),
+                args: Some(vec![
+                    "-r".to_string(),
+                    "%l".to_string(),
+                    "%p".to_string(),
+                    "%f".to_string(),
+                ]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
