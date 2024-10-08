@@ -48,6 +48,10 @@ impl Preview {
                     "%p".to_string(),
                 ]),
             },
+            Preview::Okular => TexlabForwardSearchSettings {
+                executable: Some("okular".to_string()),
+                args: Some(vec!["--unique".to_string(), "file:%p#src:%l%f".to_string()]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
