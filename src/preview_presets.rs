@@ -52,6 +52,10 @@ impl Preview {
                 executable: Some("okular".to_string()),
                 args: Some(vec!["--unique".to_string(), "file:%p#src:%l%f".to_string()]),
             },
+            Preview::QPDFView => TexlabForwardSearchSettings {
+                executable: Some("qpdfview".to_string()),
+                args: Some(vec!["--unique".to_string(), "%p#src:%f:%l:1".to_string()]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
