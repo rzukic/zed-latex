@@ -8,4 +8,6 @@ path = "src/latex.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-zed_extension_api = "0.0.6"
+serde = "1.0.210"
+serde_with = "3.11.0"
+zed_extension_api = "0.1.0"
