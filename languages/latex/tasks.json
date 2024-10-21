@@ -1,0 +1,30 @@
+[
+  {
+    "label": "latexmk",
+    "command": "latexmk",
+    "args": ["-synctex=1", "-pdf", "-recorder", "$ZED_FILENAME"],
+    "cwd": "$ZED_DIRNAME",
+    "tags": ["latex-build"]
+  },
+  {
+    "label": "latexmk (watch)",
+    "command": "latexmk",
+    "args": ["-pvc", "-synctex=1", "-pdf", "-recorder", "$ZED_FILENAME"],
+    "cwd": "$ZED_DIRNAME",
+    "tags": ["latex-build"]
+  },
+  {
+    "label": "pdflatex",
+    "command": "pdflatex",
+    "args": ["-synctex=1", "-recorder", "$ZED_FILENAME"],
+    "cwd": "$ZED_DIRNAME",
+    "tags": ["latex-build"]
+  },
+  {
+    "label": "lualatex",
+    "command": "lualatex",
+    "args": ["--synctex=1", "--recorder", "$ZED_FILENAME"],
+    "cwd": "$ZED_DIRNAME",
+    "tags": ["latex-build"]
+  }
+]
