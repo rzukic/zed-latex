@@ -31,6 +31,12 @@ impl zed::Extension for LatexExtension {
     ) -> zed::Result<zed::Command> {
         use zed::settings::BinarySettings;
 
+        // Check for the existence of a previewer
+        // (this has nothing to do with the language server but this
+        // is a convenient place to minimize the number of times this
+        // is done).
+        self.previewer = Preview::determine(worktree);
+
         let binary_settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
             .ok()
             .and_then(|lsp_settings| lsp_settings.binary);
@@ -70,12 +76,6 @@ impl zed::Extension for LatexExtension {
         // Final priority for texlab: download from GitHub releases.
         let binary_path = acquire_latest_texlab(language_server_id)?;
         self.cached_texlab_path = Some(binary_path.clone());
-
-        // Check for the existence of a previewer
-        // (this has nothing to do with the language server but this
-        // is a convenient place to minimize the number of times this
-        // is done).
-        self.previewer = Preview::determine(worktree);
 
         Ok(zed::Command {
             command: binary_path,
