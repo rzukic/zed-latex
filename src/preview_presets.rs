@@ -78,9 +78,6 @@ impl Preview {
         if worktree.which("sioyek").is_some() {
             return Some(Preview::Sioyek);
         }
-        if worktree.which("sioyek").is_some() {
-            return Some(Preview::Sioyek);
-        }
         if worktree.which("qpdfview").is_some() {
             return Some(Preview::QPDFView);
         }
