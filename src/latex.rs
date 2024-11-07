@@ -158,9 +158,11 @@ impl zed::Extension for LatexExtension {
     }
 }
 
-// Download the latest release of `texlab` from GitHub and return the path to the binary.,
+// Download the latest release of `texlab` from GitHub and return the path to the binary,
 // updating the language server installation status along the way.
+// Cache the location if downloaded to be used the next time if available.
 // If previously downloaded, skip download.
+// If no network, search if previously downloaded.
 fn acquire_latest_texlab(
     language_server_id: &zed_extension_api::LanguageServerId,
 ) -> Result<String, String> {
@@ -169,13 +171,26 @@ fn acquire_latest_texlab(
         language_server_id,
         &zed::LanguageServerInstallationStatus::CheckingForUpdate,
     );
-    let release = zed::latest_github_release(
+    let release = match zed::latest_github_release(
         "latex-lsp/texlab",
         zed::GithubReleaseOptions {
             require_assets: true,
             pre_release: false,
         },
-    )?;
+    ) {
+        Ok(release) => release,
+        Err(e) => {
+            zed::set_language_server_installation_status(
+                language_server_id,
+                &zed::LanguageServerInstallationStatus::Failed(format!(
+                    "Error finding latest GitHub release for texlab: {e}"
+                )),
+            );
+            // Fallback: check if we can find any previously downloaded releases.
+            // Do not cache in case network connection recovered later.
+            return find_previously_downloaded_texlab_release(platform);
+        }
+    };
     let arch: &str = match arch {
         zed::Architecture::Aarch64 => "aarch64",
         zed::Architecture::X86 => "i686",
@@ -218,6 +233,7 @@ fn acquire_latest_texlab(
 
         zed::make_file_executable(&binary_path)?;
 
+        // Remove older GitHub releases
         let entries =
             std::fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
         for entry in entries {
@@ -228,6 +244,35 @@ fn acquire_latest_texlab(
         }
     }
     Ok(binary_path)
+}
+
+/// Check if there are any previously downloaded GitHub releases.
+/// These will be downloaded as `texlab(.exe)` in a directory `texlab-VERSION`.
+/// Return the latest (largest version number) if any is found.
+fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String, String> {
+    let entries =
+        std::fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
+    let downloaded_releases = entries.filter_map(|dir| {
+        let dir_name: String = dir.ok()?.file_name().to_str()?.to_owned();
+        if !dir_name.starts_with("texlab-") {
+            return None;
+        }
+        let binary_path = match platform {
+            zed::Os::Mac | zed::Os::Linux => format!("{}/texlab", dir_name),
+            zed::Os::Windows => format!("{}/texlab.exe", dir_name),
+        };
+        if std::fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
+            return Some(binary_path);
+        }
+        None
+    });
+    downloaded_releases
+        .max()
+        // Lexicographic ordering will coincide with numeric ordering if version numbers have same
+        // number of digits.
+        // Proper numeric comparison probably overkill for now since this method is a fallback for
+        // an edge-case, and older downloaded GitHub releases should be deleted along the way anyway.
+        .ok_or("Failed to acquire latest texlab release and no cached version found".into())
 }
 
 zed::register_extension!(LatexExtension);
