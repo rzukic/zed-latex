@@ -37,16 +37,16 @@ impl zed::Extension for LatexExtension {
         // is done).
         self.previewer = Preview::determine(worktree);
 
-        let binary_settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.binary);
-        let env = Default::default();
+        let lsp_settings =
+            zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
+
+        let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options);
 
         // First priority for texlab executable: user-provided path.
         if let Some(BinarySettings {
             path: Some(ref path),
             arguments: ref potential_args,
-        }) = binary_settings
+        }) = lsp_settings.binary
         {
             let command = path.clone();
             let args = potential_args.clone().unwrap_or(vec![]);
@@ -143,18 +143,6 @@ impl zed::Extension for LatexExtension {
                 }
             }
         }
-    }
-
-    fn language_server_initialization_options(
-        &mut self,
-        _language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> zed::Result<Option<zed::serde_json::Value>> {
-        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.initialization_options.clone())
-            .unwrap_or_default();
-        Ok(Some(settings))
     }
 }
 
@@ -273,6 +261,31 @@ fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String
         // Proper numeric comparison probably overkill for now since this method is a fallback for
         // an edge-case, and older downloaded GitHub releases should be deleted along the way anyway.
         .ok_or("Failed to acquire latest texlab release and no cached version found".into())
+}
+
+mod texlab_env {
+    use serde::{Deserialize, Serialize};
+    use zed_extension_api::serde_json::{from_value, Value};
+
+    #[derive(Debug, Serialize, Deserialize, Default)]
+    struct InitOpts {
+        texinputs: Option<Vec<String>>,
+    }
+
+    /// Deserialize input and extract `texinputs` entry, if any, join them into a single string with colons separating them.
+    /// Return a vector containing just the tuple ("TEXINPUTS", joined string)
+    pub fn get_from_init_opts(init_opts: Option<Value>) -> Vec<(String, String)> {
+        if let Some(opts) = init_opts {
+            if let Ok(init_opts) = from_value::<InitOpts>(opts) {
+                if let Some(texinputs) = init_opts.texinputs {
+                    let joined_texinputs = texinputs.join(":");
+                    // starting . to check project first, and trailing : to check system paths
+                    return vec![("TEXINPUTS".to_string(), format!(".:{joined_texinputs}:"))];
+                }
+            }
+        }
+        vec![]
+    }
 }
 
 zed::register_extension!(LatexExtension);
