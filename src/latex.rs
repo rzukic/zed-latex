@@ -40,7 +40,7 @@ impl zed::Extension for LatexExtension {
         let lsp_settings =
             zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
 
-        let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options);
+        let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options, worktree);
 
         // First priority for texlab executable: user-provided path.
         if let Some(BinarySettings {
@@ -265,22 +265,57 @@ fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String
 
 mod texlab_env {
     use serde::{Deserialize, Serialize};
-    use zed_extension_api::serde_json::{from_value, Value};
+    use zed_extension_api::{
+        self as zed,
+        serde_json::{from_value, Value},
+        Os, Worktree,
+    };
 
     #[derive(Debug, Serialize, Deserialize, Default)]
     struct InitOpts {
-        texinputs: Option<Vec<String>>,
+        extra_tex_inputs: Option<Vec<String>>,
     }
 
-    /// Deserialize input and extract `texinputs` entry, if any, join them into a single string with colons separating them.
-    /// Return a vector containing just the tuple ("TEXINPUTS", joined string)
-    pub fn get_from_init_opts(init_opts: Option<Value>) -> Vec<(String, String)> {
+    /// Deserialize the input and extract the `extra_tex_inputs` entry, if any.
+    /// Join them into a single string with colons separating them.
+    /// If TEXINPUTS is already set in the environment, include its values.
+    /// Return a vector containing a single tuple ("TEXINPUTS", joined string).
+    pub fn get_from_init_opts(
+        init_opts: Option<Value>,
+        worktree: &Worktree,
+    ) -> Vec<(String, String)> {
         if let Some(opts) = init_opts {
             if let Ok(init_opts) = from_value::<InitOpts>(opts) {
-                if let Some(texinputs) = init_opts.texinputs {
-                    let joined_texinputs = texinputs.join(":");
-                    // starting . to check project first, and trailing : to check system paths
-                    return vec![("TEXINPUTS".to_string(), format!(".:{joined_texinputs}:"))];
+                if let Some(texinputs) = init_opts.extra_tex_inputs {
+                    // directory separator (: on Mac/Linux, ; on Windows):
+                    let sep = match zed::current_platform() {
+                        (Os::Windows, _) => ";",
+                        _ => ":",
+                    };
+
+                    let joined_extra_tex_inputs = texinputs.join(sep);
+
+                    let shell_env = worktree.shell_env();
+                    // value of TEXINPUTS in environment var if set and non-empty:
+                    let current_tex_inputs = shell_env
+                        .iter()
+                        .filter_map(|(var, val)| match (var.as_str(), val.as_str()) {
+                            ("TEXINPUTS", "") => None,
+                            ("TEXINPUTS", val) => Some(val),
+                            _ => None,
+                        })
+                        .next();
+
+                    let texinputs = match current_tex_inputs {
+                        // Starting . to check project first,
+                        // and trailing directory separator (: or ;) to check system paths
+                        Some(current_texinputs) => {
+                            format!(".{sep}{joined_extra_tex_inputs}{sep}{current_texinputs}{sep}")
+                        }
+                        None => format!(".{sep}{joined_extra_tex_inputs}{sep}"),
+                    };
+                    //
+                    return vec![("TEXINPUTS".to_string(), texinputs)];
                 }
             }
         }
