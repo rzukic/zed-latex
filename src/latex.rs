@@ -289,7 +289,7 @@ mod texlab_env {
             extra_tex_inputs: Some(texinputs),
         }) = init_opts.and_then(|json| from_value::<InitOpts>(json).ok())
         {
-            // directory separator (: on Mac/Linux, ; on Windows):
+            // Directory separator (: on Mac/Linux, ; on Windows):
             let sep = match zed::current_platform() {
                 (Os::Windows, _) => ";",
                 _ => ":",
@@ -297,16 +297,17 @@ mod texlab_env {
 
             let joined_extra_tex_inputs = texinputs.join(sep);
 
+            // To keep lifetime of env vars sufficiently long:
             let shell_env = worktree.shell_env();
-            // value of TEXINPUTS in environment var, if set and non-empty:
+            // Value of TEXINPUTS in environment var, if set and non-empty:
             let current_tex_inputs = shell_env
                 .iter()
-                .filter_map(|(var, val)| match (var.as_str(), val.as_str()) {
-                    ("TEXINPUTS", "") => None,
-                    ("TEXINPUTS", val) => Some(val),
+                .filter_map(|(var, val)| match var.as_str() {
+                    "TEXINPUTS" => Some(val),
                     _ => None,
                 })
-                .next();
+                .next()
+                .and_then(|val| if val.is_empty() { None } else { Some(val) });
 
             let tex_inputs = match current_tex_inputs {
                 // Starting . to check project first,
