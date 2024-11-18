@@ -37,16 +37,16 @@ impl zed::Extension for LatexExtension {
         // is done).
         self.previewer = Preview::determine(worktree);
 
-        let binary_settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.binary);
-        let env = Default::default();
+        let lsp_settings =
+            zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
+
+        let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options, worktree);
 
         // First priority for texlab executable: user-provided path.
         if let Some(BinarySettings {
             path: Some(ref path),
             arguments: ref potential_args,
-        }) = binary_settings
+        }) = lsp_settings.binary
         {
             let command = path.clone();
             let args = potential_args.clone().unwrap_or(vec![]);
@@ -143,18 +143,6 @@ impl zed::Extension for LatexExtension {
                 }
             }
         }
-    }
-
-    fn language_server_initialization_options(
-        &mut self,
-        _language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> zed::Result<Option<zed::serde_json::Value>> {
-        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.initialization_options.clone())
-            .unwrap_or_default();
-        Ok(Some(settings))
     }
 }
 
@@ -273,6 +261,69 @@ fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String
         // Proper numeric comparison probably overkill for now since this method is a fallback for
         // an edge-case, and older downloaded GitHub releases should be deleted along the way anyway.
         .ok_or("Failed to acquire latest texlab release and no cached version found".into())
+}
+
+mod texlab_env {
+    use serde::{Deserialize, Serialize};
+    use zed_extension_api::{
+        self as zed,
+        serde_json::{from_value, Value},
+        Os, Worktree,
+    };
+
+    #[derive(Debug, Serialize, Deserialize, Default)]
+    struct InitOpts {
+        extra_tex_inputs: Option<Vec<String>>,
+    }
+
+    /// Deserialize the input and extract the `extra_tex_inputs` entry, if any.
+    /// Join them into a single string with colons separating them.
+    /// If TEXINPUTS is already set in the environment, include its values.
+    /// Return a vector containing a single tuple ("TEXINPUTS", joined string).
+    pub fn get_from_init_opts(
+        init_opts: Option<Value>,
+        worktree: &Worktree,
+    ) -> Vec<(String, String)> {
+        // Attempt to extract extra_tex_inputs from init_opts:
+        if let Some(InitOpts {
+            extra_tex_inputs: Some(texinputs),
+        }) = init_opts.and_then(|json| from_value::<InitOpts>(json).ok())
+        {
+            // Directory separator (: on Mac/Linux, ; on Windows):
+            let sep = match zed::current_platform() {
+                (Os::Windows, _) => ";",
+                _ => ":",
+            };
+
+            let joined_extra_tex_inputs = texinputs.join(sep);
+
+            // To keep lifetime of env vars sufficiently long:
+            let shell_env = worktree.shell_env();
+            // Value of TEXINPUTS in environment var, if set and non-empty:
+            let current_tex_inputs = shell_env
+                .iter()
+                .filter_map(|(var, val)| match var.as_str() {
+                    "TEXINPUTS" => Some(val),
+                    _ => None,
+                })
+                .next()
+                .and_then(|val| if val.is_empty() { None } else { Some(val) });
+
+            let tex_inputs = match current_tex_inputs {
+                // Starting . to check project first,
+                // and trailing directory separator (: or ;) to check system paths
+                Some(current_texinputs) => {
+                    format!(".{sep}{joined_extra_tex_inputs}{sep}{current_texinputs}{sep}")
+                }
+                None => format!(".{sep}{joined_extra_tex_inputs}{sep}"),
+            };
+            //
+            return vec![("TEXINPUTS".to_string(), tex_inputs)];
+        }
+
+        // In all other cases, do not explicitly set any environment variables.
+        vec![]
+    }
 }
 
 zed::register_extension!(LatexExtension);
