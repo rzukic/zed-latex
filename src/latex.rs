@@ -284,41 +284,43 @@ mod texlab_env {
         init_opts: Option<Value>,
         worktree: &Worktree,
     ) -> Vec<(String, String)> {
-        if let Some(opts) = init_opts {
-            if let Ok(init_opts) = from_value::<InitOpts>(opts) {
-                if let Some(texinputs) = init_opts.extra_tex_inputs {
-                    // directory separator (: on Mac/Linux, ; on Windows):
-                    let sep = match zed::current_platform() {
-                        (Os::Windows, _) => ";",
-                        _ => ":",
-                    };
+        // Attempt to extract extra_tex_inputs from init_opts:
+        if let Some(InitOpts {
+            extra_tex_inputs: Some(texinputs),
+        }) = init_opts.and_then(|json| from_value::<InitOpts>(json).ok())
+        {
+            // directory separator (: on Mac/Linux, ; on Windows):
+            let sep = match zed::current_platform() {
+                (Os::Windows, _) => ";",
+                _ => ":",
+            };
 
-                    let joined_extra_tex_inputs = texinputs.join(sep);
+            let joined_extra_tex_inputs = texinputs.join(sep);
 
-                    let shell_env = worktree.shell_env();
-                    // value of TEXINPUTS in environment var if set and non-empty:
-                    let current_tex_inputs = shell_env
-                        .iter()
-                        .filter_map(|(var, val)| match (var.as_str(), val.as_str()) {
-                            ("TEXINPUTS", "") => None,
-                            ("TEXINPUTS", val) => Some(val),
-                            _ => None,
-                        })
-                        .next();
+            let shell_env = worktree.shell_env();
+            // value of TEXINPUTS in environment var, if set and non-empty:
+            let current_tex_inputs = shell_env
+                .iter()
+                .filter_map(|(var, val)| match (var.as_str(), val.as_str()) {
+                    ("TEXINPUTS", "") => None,
+                    ("TEXINPUTS", val) => Some(val),
+                    _ => None,
+                })
+                .next();
 
-                    let texinputs = match current_tex_inputs {
-                        // Starting . to check project first,
-                        // and trailing directory separator (: or ;) to check system paths
-                        Some(current_texinputs) => {
-                            format!(".{sep}{joined_extra_tex_inputs}{sep}{current_texinputs}{sep}")
-                        }
-                        None => format!(".{sep}{joined_extra_tex_inputs}{sep}"),
-                    };
-                    //
-                    return vec![("TEXINPUTS".to_string(), texinputs)];
+            let tex_inputs = match current_tex_inputs {
+                // Starting . to check project first,
+                // and trailing directory separator (: or ;) to check system paths
+                Some(current_texinputs) => {
+                    format!(".{sep}{joined_extra_tex_inputs}{sep}{current_texinputs}{sep}")
                 }
-            }
+                None => format!(".{sep}{joined_extra_tex_inputs}{sep}"),
+            };
+            //
+            return vec![("TEXINPUTS".to_string(), tex_inputs)];
         }
+
+        // In all other cases, do not explicitly set any environment variables.
         vec![]
     }
 }
