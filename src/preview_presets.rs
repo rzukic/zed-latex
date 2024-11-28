@@ -40,7 +40,7 @@ impl Preview {
                 args: Some(vec![
                     "--reuse-window".to_string(),
                     "--inverse-search".to_string(),
-                    "zed %1:%2".to_string(),
+                    "zed \"%%1\":%%2".to_string(),
                     "--forward-search-file".to_string(),
                     "%f".to_string(),
                     "--forward-search-line".to_string(),
