@@ -117,6 +117,36 @@
   command: _ @function.macro
   keys: (curly_group_text_list) @constant)
 
+(label_definition
+  name: (curly_group_text
+    (text
+      word: (operator "-") @constant)))
+
+(label_definition
+  name: (curly_group_text
+    (text
+      word: (subscript "_" @constant))))
+
+(label_definition
+  name: (curly_group_text
+    (text
+      word: (superscript "^" @constant))))
+
+(label_reference
+  names: (curly_group_text_list
+    (text
+      word: (operator "-") @constant)))
+
+(label_reference
+  names: (curly_group_text_list
+    (text
+      word: (subscript "_" @constant))))
+
+(label_reference
+  names: (curly_group_text_list
+    (text
+      word: (superscript "^" @constant))))
+
 ; Does not currently exist in the LaTeX grammar, maybe to come?:
 ;(hyperlink
   ;command: (_) @function
