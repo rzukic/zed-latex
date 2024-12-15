@@ -2,10 +2,28 @@ name = "LaTeX"
 grammar = "latex"
 path_suffixes = ["tex", "latex", "sty", "cls"]
 line_comments = ["%"]
-autoclose_before = "$}]'"
+autoclose_before = "$}]'\\"
 brackets = [
-    { start = "{", end = "}", close = true, newline = false },
-    { start = "[", end = "]", close = true, newline = false },
-    { start = "$", end = "$", close = true, newline = false },
-    { start = "`", end = "'", close = true, newline = false },
+    { start = "{", end = "}", close = true, newline = false, not_in = [
+        "comment",
+    ] },
+    { start = "\\[", end = "\\]", close = true, newline = true, not_in = [
+        "math",
+        "comment",
+    ] },
+    { start = "\\(", end = "\\)", close = true, newline = true, not_in = [
+        "math",
+        "comment",
+    ] },
+    { start = "[", end = "]", close = true, newline = false, not_in = [
+        "comment",
+    ] },
+    { start = "$", end = "$", close = true, newline = false, not_in = [
+        "math",
+        "comment",
+    ] },
+    { start = "`", end = "'", close = true, newline = false, not_in = [
+        "math",
+        "comment",
+    ] },
 ]
