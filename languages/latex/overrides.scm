@@ -12,4 +12,4 @@
   (line_comment)
   (block_comment)
   (comment_environment)
-] @comment
+] @comment.inclusive
