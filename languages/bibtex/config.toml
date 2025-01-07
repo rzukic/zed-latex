@@ -1,7 +1,7 @@
 name = "BibTeX"
 grammar = "bibtex"
 path_suffixes = ["bib", "bibtex", "biblatex"]
-line_comments = ["%"]
+line_comments = ["% "]
 autoclose_before = "}])"
 brackets = [
     { start = "{", end = "}", close = true, newline = false },
