@@ -1,11 +1,12 @@
 id = "latex"
 name = "LaTeX"
-version = "0.1.6-dev"
+version = "0.1.6"
 schema_version = 1
 authors = [
     "Ruben Zukic <ruben@zukic.net>",
     "Oli Callaghan <me@olicallaghan.com>",
     "Luke Naylor <luke.naylr@gmail.com>",
+    "Jan Solanti <jhs@psonet.com>",
 ]
 description = "LaTeX language server and syntax highlighting for Zed. See wiki on GitHub for help."
 repository = "https://github.com/rzukic/zed-latex"
