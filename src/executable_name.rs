@@ -5,6 +5,7 @@ pub enum Exe {
     Zed,
     Zeditor,
     Zedit,
+    ZedEditor,
 }
 
 impl Exe {
@@ -13,6 +14,7 @@ impl Exe {
             Exe::Zed => "zed",
             Exe::Zeditor => "zeditor",
             Exe::Zedit => "zedit",
+            Exe::ZedEditor => "zed-editor",
         }
     }
 
@@ -24,6 +26,9 @@ impl Exe {
             return Some(Exe::Zeditor);
         }
         if worktree.which("zedit").is_some() {
+            return Some(Exe::Zedit);
+        }
+        if worktree.which("zed-editor").is_some() {
             return Some(Exe::Zedit);
         }
         None
