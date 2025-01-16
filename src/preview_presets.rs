@@ -1,5 +1,5 @@
-use crate::executable_name::Exe;
 use crate::texlab_settings::*;
+use crate::zed_command::CommandName;
 use zed_extension_api as zed;
 
 #[allow(dead_code)]
@@ -13,7 +13,7 @@ pub enum Preview {
 }
 
 impl Preview {
-    pub fn create_preset(&self, exe: Exe) -> TexlabForwardSearchSettings {
+    pub fn create_preset(&self, zed_command: CommandName) -> TexlabForwardSearchSettings {
         match self {
             Preview::Zathura => TexlabForwardSearchSettings {
                 executable: Some("zathura".to_string()),
@@ -21,7 +21,7 @@ impl Preview {
                     "--synctex-forward".to_string(),
                     "%l:1:%f".to_string(),
                     "-x".to_string(),
-                    format!("{} {}", exe.to_str(), "%%{input}:%%{line}"),
+                    format!("{} {}", zed_command.to_str(), "%%{input}:%%{line}"),
                     "%p".to_string(),
                 ]),
             },
@@ -41,7 +41,7 @@ impl Preview {
                 args: Some(vec![
                     "--reuse-window".to_string(),
                     "--inverse-search".to_string(),
-                    format!("{} \"%%1\":%%2", exe.to_str()),
+                    format!("{} \"%%1\":%%2", zed_command.to_str()),
                     "--forward-search-file".to_string(),
                     "%f".to_string(),
                     "--forward-search-line".to_string(),

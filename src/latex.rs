@@ -1,10 +1,10 @@
-mod executable_name;
 mod preview_presets;
 mod texlab_settings;
+mod zed_command;
 
-use executable_name::Exe;
 use preview_presets::*;
 use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
+use zed_command::CommandName;
 use zed_extension_api::{self as zed, serde_json};
 
 #[derive(Default)]
@@ -15,7 +15,7 @@ struct LatexExtension {
     /// Detected PDF previewer
     previewer: Option<Preview>,
     /// Executable to invoke the zed editor (None if not on PATH)
-    exe: Option<Exe>,
+    zed_command: Option<CommandName>,
 }
 
 impl zed::Extension for LatexExtension {
@@ -41,7 +41,7 @@ impl zed::Extension for LatexExtension {
         // is a convenient place to minimize the number of times this
         // is done).
         self.previewer = Preview::determine(worktree);
-        self.exe = Exe::determine(worktree);
+        self.zed_command = CommandName::determine(worktree);
 
         let lsp_settings =
             zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
@@ -120,7 +120,7 @@ impl zed::Extension for LatexExtension {
                             texlab: Some(TexlabSettings {
                                 build: Some(TexlabBuildSettings::build_and_search_on()),
                                 forward_search: Some(
-                                    previewer.create_preset(self.exe.unwrap_or_default()),
+                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
                                 ),
                                 ..Default::default()
                             }),
@@ -136,7 +136,7 @@ impl zed::Extension for LatexExtension {
                         serde_json::to_value(WorkspaceSettings {
                             texlab: Some(TexlabSettings {
                                 forward_search: Some(
-                                    previewer.create_preset(self.exe.unwrap_or_default()),
+                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
                                 ),
                                 build: Some(
                                     texlab_settings_without_forward_search

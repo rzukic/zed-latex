@@ -1,7 +1,7 @@
 use zed_extension_api as zed;
 
 #[derive(Copy, Clone)]
-pub enum Exe {
+pub enum CommandName {
     Zed,
     Zeditor,
     Zedit,
@@ -9,14 +9,14 @@ pub enum Exe {
     Flatpak,
 }
 
-impl Exe {
+impl CommandName {
     pub fn to_str(&self) -> &'static str {
         match self {
-            Exe::Zed => "zed",
-            Exe::Zeditor => "zeditor",
-            Exe::Zedit => "zedit",
-            Exe::ZedEditor => "zed-editor",
-            Exe::Flatpak => "flatpak run dev.zed.Zed",
+            CommandName::Zed => "zed",
+            CommandName::Zeditor => "zeditor",
+            CommandName::Zedit => "zedit",
+            CommandName::ZedEditor => "zed-editor",
+            CommandName::Flatpak => "flatpak run dev.zed.Zed",
         }
     }
 
@@ -34,7 +34,7 @@ impl Exe {
                 .find(|&var| var.0 == "ZED_FLATPAK_LIB_PATH")
                 .is_some()
             {
-                return Some(Exe::Flatpak);
+                return Some(CommandName::Flatpak);
             }
         }
         // MINOR EDGE CASE WARNING
@@ -44,19 +44,19 @@ impl Exe {
         // might not actually be the one that is running.
         if worktree.which("zed").is_some() {
             // typical case
-            return Some(Exe::Zed);
+            return Some(CommandName::Zed);
         }
 
         if zed::Os::Linux == zed::current_platform().0 {
             // Known executables created by third-party package managers in linux
             if worktree.which("zeditor").is_some() {
-                return Some(Exe::Zeditor);
+                return Some(CommandName::Zeditor);
             }
             if worktree.which("zedit").is_some() {
-                return Some(Exe::Zedit);
+                return Some(CommandName::Zedit);
             }
             if worktree.which("zed-editor").is_some() {
-                return Some(Exe::ZedEditor);
+                return Some(CommandName::ZedEditor);
             }
         }
 
@@ -64,8 +64,8 @@ impl Exe {
     }
 }
 
-impl Default for Exe {
+impl Default for CommandName {
     fn default() -> Self {
-        Exe::Zed
+        CommandName::Zed
     }
 }
