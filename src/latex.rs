@@ -1,7 +1,10 @@
 mod preview_presets;
 mod texlab_settings;
+mod zed_command;
+
 use preview_presets::*;
 use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
+use zed_command::CommandName;
 use zed_extension_api::{self as zed, serde_json};
 
 #[derive(Default)]
@@ -11,6 +14,8 @@ struct LatexExtension {
     cached_texlab_path: Option<String>,
     /// Detected PDF previewer
     previewer: Option<Preview>,
+    /// Executable to invoke the zed editor (None if not on PATH)
+    zed_command: Option<CommandName>,
 }
 
 impl zed::Extension for LatexExtension {
@@ -31,11 +36,12 @@ impl zed::Extension for LatexExtension {
     ) -> zed::Result<zed::Command> {
         use zed::settings::BinarySettings;
 
-        // Check for the existence of a previewer
+        // Check for the existence of a previewer, and zed executable name
         // (this has nothing to do with the language server but this
         // is a convenient place to minimize the number of times this
         // is done).
         self.previewer = Preview::determine(worktree);
+        self.zed_command = CommandName::determine(worktree);
 
         let lsp_settings =
             zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
@@ -113,7 +119,9 @@ impl zed::Extension for LatexExtension {
                         serde_json::to_value(WorkspaceSettings {
                             texlab: Some(TexlabSettings {
                                 build: Some(TexlabBuildSettings::build_and_search_on()),
-                                forward_search: Some(previewer.create_preset()),
+                                forward_search: Some(
+                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
+                                ),
                                 ..Default::default()
                             }),
                         })
@@ -127,7 +135,9 @@ impl zed::Extension for LatexExtension {
                     })) => Ok(Some(
                         serde_json::to_value(WorkspaceSettings {
                             texlab: Some(TexlabSettings {
-                                forward_search: Some(previewer.create_preset()),
+                                forward_search: Some(
+                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
+                                ),
                                 build: Some(
                                     texlab_settings_without_forward_search
                                         .build
