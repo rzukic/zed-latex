@@ -10,6 +10,7 @@ pub enum Preview {
     QPDFView,
     Okular,
     SumatraPDF,
+    Evince,
 }
 
 impl Preview {
@@ -74,6 +75,17 @@ impl Preview {
                 executable: Some("qpdfview".to_string()),
                 args: Some(vec!["--unique".to_string(), "%p#src:%f:%l:1".to_string()]),
             },
+            Preview::Evince => TexlabForwardSearchSettings {
+                executable: Some("evince-synctex".to_string()),
+                args: Some(vec![
+                    "-f".to_string(),
+                    "%l".to_string(),
+                    "-t".to_string(),
+                    "%f".to_string(),
+                    "%p".to_string(),
+                    format!("{} %%f:%%l", zed_command.to_str())
+                ]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
@@ -90,6 +102,9 @@ impl Preview {
             }
         }
 
+        if worktree.which("evince").is_some() {
+            return Some(Preview::Evince);
+        }
         if worktree.which("zathura").is_some() {
             return Some(Preview::Zathura);
         }
