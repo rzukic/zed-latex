@@ -50,8 +50,25 @@ impl Preview {
                 ]),
             },
             Preview::Okular => TexlabForwardSearchSettings {
-                executable: Some("okular".to_string()),
-                args: Some(vec!["--unique".to_string(), "file:%p#src:%l%f".to_string()]),
+                // Unfortunately, there is no single okular command that can be used for the
+                // forward search command in a way that sets up the inverse search command.
+                // Therefore, we resort to a shell command involving two okular commands.
+                //
+                // This shell command attempts to open okular performing a forward search and
+                // setting the inverse-search command to open the file in zed at the correct
+                // location.
+                // However the `--unique` flag conflicts with the `--editor-cmd` flag, but
+                // only if okular is already open. At that point, the same command is run
+                // again but without the `--editor-cmd` flag, which is ok because the editor
+                // command (inverse search) would already be set at that point.
+                executable: Some("sh".to_string()),
+                args: Some(vec![
+                    "-c".to_string(),
+                    format!(
+                        "okular --unique --noraise --editor-cmd \"{} '%%f':%%l:%%c\" \"%p#src:%l %f\" || okular --unique --noraise \"%p#src:%l %f\"",
+                        zed_command.to_str()
+                    ),
+                ]),
             },
             Preview::QPDFView => TexlabForwardSearchSettings {
                 executable: Some("qpdfview".to_string()),
