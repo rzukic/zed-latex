@@ -1,5 +1,3 @@
-use std::env;
-
 use crate::texlab_settings::*;
 use crate::zed_command::CommandName;
 use zed_extension_api as zed;
