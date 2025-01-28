@@ -104,35 +104,28 @@ impl Preview {
         }
 
         if worktree.which("evince").is_some() {
-            if std::fs::metadata("evince_synctex.py").map_or(false, |stat| stat.is_file()) {
-                // `evince-synctex` already downloaded to latex extension work directory
-                return Some(Preview::Evince {
-                    evince_synctex_path: format!(
-                        "{}/evince_synctex.py",
-                        std::env::current_dir()
-                            .unwrap()
-                            .as_os_str()
-                            .to_str()
-                            .unwrap()
-                    ),
-                });
-            } else {
-                // only choose evince for preview if evince_synctex.py is downloaded successfully
-                if zed::download_file(
-                    "https://raw.githubusercontent.com/lnay/evince-synctex/841f2583f5719b6b187e35e729d827b92448b8fe/evince_synctex.py",
-                    "evince_synctex.py",
-                    zed::DownloadedFileType::Uncompressed
-                ).is_ok() {
+            if let Some(evince_synctex_path) = (|| {
+                Some(format!(
+                    "{}/evince_synctex.py",
+                    std::env::current_dir().ok()?.as_os_str().to_str()?
+                ))
+            })() {
+                // The following would all be useless if the string path for
+                // evince_synctex.py in CWD cannot be obtained
+                if std::fs::metadata("evince_synctex.py").map_or(false, |stat| stat.is_file()) {
+                    // `evince-synctex` already downloaded to latex extension work directory
                     return Some(Preview::Evince {
-                        evince_synctex_path: format!(
-                            "{}/evince_synctex.py",
-                            std::env::current_dir()
-                                .unwrap()
-                                .as_os_str()
-                                .to_str()
-                                .unwrap()
-                        ),
+                        evince_synctex_path,
                     });
+                } else {
+                    // Choose evince for preview provided evince_synctex.py downloaded successfully
+                    if zed::download_file(
+                        "https://raw.githubusercontent.com/lnay/evince-synctex/841f2583f5719b6b187e35e729d827b92448b8fe/evince_synctex.py",
+                        "evince_synctex.py",
+                        zed::DownloadedFileType::Uncompressed
+                    ).is_ok() {
+                        return Some(Preview::Evince { evince_synctex_path });
+                    }
                 }
             }
         }
