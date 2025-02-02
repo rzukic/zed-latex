@@ -10,6 +10,7 @@ pub enum Preview {
     QPDFView,
     Okular,
     SumatraPDF,
+    Evince { evince_synctex_path: String },
 }
 
 impl Preview {
@@ -74,6 +75,18 @@ impl Preview {
                 executable: Some("qpdfview".to_string()),
                 args: Some(vec!["--unique".to_string(), "%p#src:%f:%l:1".to_string()]),
             },
+            Preview::Evince{ ref evince_synctex_path} => TexlabForwardSearchSettings {
+                executable: Some("python".to_string()),
+                args: Some(vec![
+                    evince_synctex_path.clone(),
+                    "-f".to_string(),
+                    "%l".to_string(),
+                    "-t".to_string(),
+                    "%f".to_string(),
+                    "%p".to_string(),
+                    format!("{} %%f:%%l", zed_command.to_str())
+                ]),
+            },
             _ => TexlabForwardSearchSettings::default(),
         }
     }
@@ -90,6 +103,32 @@ impl Preview {
             }
         }
 
+        if worktree.which("evince").is_some() {
+            if let Some(evince_synctex_path) = (|| {
+                Some(format!(
+                    "{}/evince_synctex.py",
+                    std::env::current_dir().ok()?.as_os_str().to_str()?
+                ))
+            })() {
+                // The following would all be useless if the string path for
+                // evince_synctex.py in CWD cannot be obtained
+                if std::fs::metadata("evince_synctex.py").map_or(false, |stat| stat.is_file()) {
+                    // `evince-synctex` already downloaded to latex extension work directory
+                    return Some(Preview::Evince {
+                        evince_synctex_path,
+                    });
+                } else {
+                    // Choose evince for preview provided evince_synctex.py downloaded successfully
+                    if zed::download_file(
+                        "https://raw.githubusercontent.com/lnay/evince-synctex/841f2583f5719b6b187e35e729d827b92448b8fe/evince_synctex.py",
+                        "evince_synctex.py",
+                        zed::DownloadedFileType::Uncompressed
+                    ).is_ok() {
+                        return Some(Preview::Evince { evince_synctex_path });
+                    }
+                }
+            }
+        }
         if worktree.which("zathura").is_some() {
             return Some(Preview::Zathura);
         }
