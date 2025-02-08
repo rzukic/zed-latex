@@ -17,6 +17,7 @@ pub struct TexlabSettings {
     pub build: Option<TexlabBuildSettings>,
     pub forward_search: Option<TexlabForwardSearchSettings>,
     pub chktex: Option<Value>,
+    pub diagnostics: Option<Value>,
     pub diagnostics_delay: Option<Value>,
     pub symbols: Option<Value>,
     pub formatter_line_length: Option<Value>,
