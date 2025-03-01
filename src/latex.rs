@@ -48,34 +48,28 @@ impl zed::Extension for LatexExtension {
 
         let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options, worktree);
 
+        // No CLI args are provided to `texlab` by default, but they can be provided in the settings.
+        let args = match lsp_settings.binary {
+            Some(BinarySettings { arguments: Some(ref args), .. }) => args.clone(),
+            _ => vec![],
+        };
+
         // First priority for texlab executable: user-provided path.
-        if let Some(BinarySettings {
-            path: Some(ref path),
-            arguments: ref potential_args,
-        }) = lsp_settings.binary
-        {
+        if let Some(BinarySettings { path: Some(ref path), .. }) = lsp_settings.binary {
             let command = path.clone();
-            let args = potential_args.clone().unwrap_or(vec![]);
             return Ok(zed::Command { command, args, env });
         }
 
         // Second priority for texlab: already installed and on PATH.
         if let Some(command) = worktree.which("texlab") {
-            return Ok(zed::Command {
-                command,
-                args: vec![],
-                env,
-            });
+            return Ok(zed::Command { command, args, env });
         }
 
         // Third priority for texlab: cached path (from download in final priority).
         if let Some(ref path) = self.cached_texlab_path {
             if std::fs::metadata(path).is_ok() {
-                return Ok(zed::Command {
-                    command: path.clone(),
-                    args: vec![],
-                    env,
-                });
+                let command = path.clone();
+                return Ok(zed::Command { command, args, env });
             }
         }
 
@@ -83,11 +77,7 @@ impl zed::Extension for LatexExtension {
         let binary_path = acquire_latest_texlab(language_server_id)?;
         self.cached_texlab_path = Some(binary_path.clone());
 
-        Ok(zed::Command {
-            command: binary_path,
-            args: vec![],
-            env,
-        })
+        Ok(zed::Command { command: binary_path, args, env })
     }
 
     fn language_server_workspace_configuration(
