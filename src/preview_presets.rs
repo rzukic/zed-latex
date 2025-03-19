@@ -107,17 +107,16 @@ impl Preview {
         }
 
         if worktree.which("evince").is_some() {
-            // TODO: redo this stuff with github releases similarly to how the
-            // texlab download is sorted (remove chrono crate at that point).
             const SCRIPT_NAME: &str = "evince_synctex.py";
             const GITHUB_REPO_NAME: &str = "lnay/evince-synctex";
             const COMMIT_HASH: &str = "635f7863408a44f3aaa0dbad512f2ba6ac1ad6ff";
-            // Following values refer to the estimated latest time when a release of this
-            // extension updates the version of evince_synctex.py is to be downloaded.
-            // (i.e. possibly the near future to account for Zed extension release pipeline).
-            const LAST_CHANGE_YEAR: i32 = 2025;
-            const LAST_CHANGE_MONTH: u32 = 3;
-            const LAST_CHANGE_DAY: u32 = 16;
+            // Following values refer to the estimated latest time when a
+            // release of this extension updates the version of
+            // evince_synctex.py is to be downloaded. (i.e. possibly the near
+            // future to account for Zed extension release pipeline).
+            const LAST_UPDATE_YEAR: i32 = 2025;
+            const LAST_UPDATE_MONTH: u32 = 3;
+            const LAST_UPDATE_DAY: u32 = 20;
 
             // The following would all be useless if the string path for
             // evince_synctex.py in CWD cannot be obtained:
@@ -129,17 +128,17 @@ impl Preview {
             })() {
                 // Check if `evince_synctex.py` has already downloaded to
                 // latex extension work directory since the last time this
-                // extension updated the version of `evince_synctex.py`
+                // extension updated the version of `evince_synctex.py`.
                 if let Ok(stat) = std::fs::metadata(SCRIPT_NAME) {
                     if stat.is_file() {
                         if let Ok(last_download) = stat.modified() {
-                            // SystemTime estimate for last extension update
-                            // where evince_synctex.py was updated:
+                            // SystemTime estimate for last extension update.
+                            // When evince_synctex.py was updated:
                             let last_update: SystemTime = Utc
                                 .with_ymd_and_hms(
-                                    LAST_CHANGE_YEAR,
-                                    LAST_CHANGE_MONTH,
-                                    LAST_CHANGE_DAY,
+                                    LAST_UPDATE_YEAR,
+                                    LAST_UPDATE_MONTH,
+                                    LAST_UPDATE_DAY,
                                     0,
                                     0,
                                     0,
@@ -155,7 +154,8 @@ impl Preview {
                         }
                     }
                 }
-                // Choose evince for preview provided evince_synctex.py downloaded successfully
+                // Choose evince for preview, provided that evince_synctex.py
+                // downloads successfully.
                 if zed::download_file(
                     format!("https://raw.githubusercontent.com/{GITHUB_REPO_NAME}/{COMMIT_HASH}/{SCRIPT_NAME}").as_str(),
                     SCRIPT_NAME,
