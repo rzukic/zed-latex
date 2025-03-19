@@ -1,5 +1,8 @@
 use crate::texlab_settings::*;
 use crate::zed_command::CommandName;
+use chrono::TimeZone;
+use chrono::Utc;
+use std::time::SystemTime;
 use zed_extension_api as zed;
 
 #[allow(dead_code)]
@@ -104,28 +107,61 @@ impl Preview {
         }
 
         if worktree.which("evince").is_some() {
+            const SCRIPT_NAME: &str = "evince_synctex.py";
+            const GITHUB_REPO_NAME: &str = "lnay/evince-synctex";
+            const COMMIT_HASH: &str = "635f7863408a44f3aaa0dbad512f2ba6ac1ad6ff";
+            // Following values refer to the estimated latest time when a
+            // release of this extension updates the version of
+            // evince_synctex.py is to be downloaded. (i.e. possibly the near
+            // future to account for Zed extension release pipeline).
+            const LAST_UPDATE_YEAR: i32 = 2025;
+            const LAST_UPDATE_MONTH: u32 = 3;
+            const LAST_UPDATE_DAY: u32 = 20;
+
+            // The following would all be useless if the string path for
+            // evince_synctex.py in CWD cannot be obtained:
             if let Some(evince_synctex_path) = (|| {
                 Some(format!(
-                    "{}/evince_synctex.py",
+                    "{}/{SCRIPT_NAME}",
                     std::env::current_dir().ok()?.as_os_str().to_str()?
                 ))
             })() {
-                // The following would all be useless if the string path for
-                // evince_synctex.py in CWD cannot be obtained
-                if std::fs::metadata("evince_synctex.py").map_or(false, |stat| stat.is_file()) {
-                    // `evince-synctex` already downloaded to latex extension work directory
-                    return Some(Preview::Evince {
-                        evince_synctex_path,
-                    });
-                } else {
-                    // Choose evince for preview provided evince_synctex.py downloaded successfully
-                    if zed::download_file(
-                        "https://raw.githubusercontent.com/lnay/evince-synctex/841f2583f5719b6b187e35e729d827b92448b8fe/evince_synctex.py",
-                        "evince_synctex.py",
-                        zed::DownloadedFileType::Uncompressed
-                    ).is_ok() {
-                        return Some(Preview::Evince { evince_synctex_path });
+                // Check if `evince_synctex.py` has already downloaded to
+                // latex extension work directory since the last time this
+                // extension updated the version of `evince_synctex.py`.
+                if let Ok(stat) = std::fs::metadata(SCRIPT_NAME) {
+                    if stat.is_file() {
+                        if let Ok(last_download) = stat.modified() {
+                            // SystemTime estimate for last extension update.
+                            // When evince_synctex.py was updated:
+                            let last_update: SystemTime = Utc
+                                .with_ymd_and_hms(
+                                    LAST_UPDATE_YEAR,
+                                    LAST_UPDATE_MONTH,
+                                    LAST_UPDATE_DAY,
+                                    0,
+                                    0,
+                                    0,
+                                )
+                                .single()
+                                .unwrap_or_default()
+                                .into();
+                            if last_download > last_update {
+                                return Some(Preview::Evince {
+                                    evince_synctex_path,
+                                });
+                            }
+                        }
                     }
+                }
+                // Choose evince for preview, provided that evince_synctex.py
+                // downloads successfully.
+                if zed::download_file(
+                    format!("https://raw.githubusercontent.com/{GITHUB_REPO_NAME}/{COMMIT_HASH}/{SCRIPT_NAME}").as_str(),
+                    SCRIPT_NAME,
+                    zed::DownloadedFileType::Uncompressed
+                ).is_ok() {
+                    return Some(Preview::Evince { evince_synctex_path });
                 }
             }
         }
