@@ -1,4 +1,4 @@
-//! This module provides functionality for managing and modifying the LSP settings for the Texlab language server.
+//! Provides functionality for managing and modifying the LSP settings for the Texlab language server.
 //!
 //! It handles:
 //! - Retrieving Texlab LSP settings for a given worktree
@@ -10,10 +10,10 @@
 //! existing user configurations.
 
 pub mod preview_presets;
-mod texlab_settings;
+mod types;
 
 use crate::LatexExtension;
-use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
+use types::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
 use zed_extension_api::{self as zed, serde_json};
 
 /// Retrieves and potentially modifies the texlab LSP settings for a given worktree.

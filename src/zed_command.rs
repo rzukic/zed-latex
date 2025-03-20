@@ -1,4 +1,4 @@
-//! This module provides functionality for determining the command which launches Zed.
+//! Provides functionality for determining the command which launches Zed.
 //! Used outside this module for inverse-search callbacks with synctex.
 //!
 //! Cases handled:

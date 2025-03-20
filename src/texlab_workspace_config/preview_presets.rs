@@ -1,4 +1,4 @@
-//! Module dedicated to storing information specific to each of the PDF previewers supported by this Zed extension.
+//! Stores information specific to each of the PDF previewers supported by this Zed extension.
 //! That is, how to detect them, and what command to use for forward search (and inverse when possible).
 //!
 //! The module primarily:
@@ -6,7 +6,7 @@
 //! - Creates appropriate `texlab.settings.forwardSearch` settings for each previewer
 //! - Detects an available previewer in the system
 
-use super::texlab_settings::*;
+use super::types::TexlabForwardSearchSettings;
 use crate::zed_command::CommandName;
 use chrono::TimeZone;
 use chrono::Utc;

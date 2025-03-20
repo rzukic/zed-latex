@@ -1,3 +1,7 @@
+//! This module's main responsibility is providing the command to start the `texlab` language server, as well as the appropriate environment.
+//! If necessary, it will download the latest release of `texlab` from GitHub.
+//!
+//! [`texlab`]: https://github.com/latex-lsp/texlab
 use super::LatexExtension;
 use zed_extension_api as zed;
 
