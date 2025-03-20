@@ -1,3 +1,11 @@
+//! Module dedicated to storing information specific to each of the PDF previewers supported by this Zed extension.
+//! That is, how to detect them, and what command to use for forward search (and inverse when possible).
+//!
+//! The module primarily:
+//! - Defines supported PDF previewers
+//! - Creates appropriate `texlab.settings.forwardSearch` settings for each previewer
+//! - Detects an available previewer in the system
+
 use super::texlab_settings::*;
 use crate::zed_command::CommandName;
 use chrono::TimeZone;
@@ -5,6 +13,16 @@ use chrono::Utc;
 use std::time::SystemTime;
 use zed_extension_api as zed;
 
+/// Represents different types of PDF preview applications that this Zed extension supports for previewing built LaTeX documents.
+///
+/// # Variants
+/// * `Zathura` - The Zathura document viewer
+/// * `Skim` - PDF viewer for macOS with SyncTeX support
+/// * `Sioyek` - PDF viewer optimized for technical documents
+/// * `QPDFView` - Tabbed document viewer
+/// * `Okular` - Universal document viewer for KDE
+/// * `SumatraPDF` - PDF viewer for Windows
+/// * `Evince` - GNOME document viewer
 #[allow(dead_code)]
 pub enum Preview {
     Zathura,
@@ -17,6 +35,18 @@ pub enum Preview {
 }
 
 impl Preview {
+    /// Creates the appropriate `texlab.settings.forwardSearch` settings for the specific PDF previewer.
+    ///
+    /// This function configures the executable path and command line arguments needed for
+    /// synctex-based forward searching (and inverse when possible) in each supported previewer.
+    ///
+    /// # Arguments
+    ///
+    /// * `zed_command` - The Zed editor command to use for inverse search (opening files from the PDF viewer)
+    ///
+    /// # Returns
+    ///
+    /// `TexlabForwardSearchSettings` containing the executable and arguments for forward search
     pub fn create_preset(&self, zed_command: CommandName) -> TexlabForwardSearchSettings {
         match self {
             Preview::Zathura => TexlabForwardSearchSettings {
@@ -94,6 +124,20 @@ impl Preview {
         }
     }
 
+    /// Detects a PDF previewer available on the system.
+    ///
+    /// This function checks for the availability of various PDF previewers by looking for
+    /// their executables in the system PATH. It also handles special cases like downloading
+    /// support scripts for Evince.
+    ///
+    /// # Arguments
+    ///
+    /// * `worktree` - Reference to the Zed worktree, used for checking executable availability
+    ///
+    /// # Returns
+    ///
+    /// `Option<Preview>` containing the first supported PDF previewer found, or `None` if no
+    /// supported previewer is available
     pub fn determine(worktree: &zed::Worktree) -> Option<Preview> {
         let (platform, _) = zed::current_platform();
 

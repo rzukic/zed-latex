@@ -172,6 +172,15 @@ fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String
         .ok_or("Failed to acquire latest texlab release and no cached version found".into())
 }
 
+/// `texlab_env` module contains functions and structs related to setting the environment variables
+/// to set when starting the `texlab` language server.
+///
+/// The `texlab` language server can use the `TEXINPUTS` environment variable to find files.
+/// So this Zed extensions allows adding additional directories to the `TEXINPUTS` environment variable,
+/// by providing a list of directories in the `extra_tex_inputs` field of the `initialization_options`
+/// for the `texlab` language server.
+/// It is done this way because `texlab` does not require any initialization options, and the Zed extension API
+/// does not provide a way to provide arbitrary settings to an extension directly (as of writing).
 mod texlab_env {
     use serde::{Deserialize, Serialize};
     use zed_extension_api::{

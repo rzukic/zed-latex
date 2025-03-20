@@ -1,3 +1,20 @@
+//! This module provides functionality for determining the command which launches Zed.
+//! Used outside this module for inverse-search callbacks with synctex.
+//!
+//! Cases handled:
+//! - Standard installations ("zed")
+//! - Flatpak installations on Linux
+//! - Alternative package manager installations (creating executable "zeditor", "zedit", or "zed-editor")
+//!
+//! # Examples
+//! ```
+//! use zed_extension_api::{self as zed, Worktree};
+//! // ...
+//! // worktree: Worktree
+//! if let Some(cmd) = CommandName::determine(&worktree) {
+//!     println!("Zed can be launched with command: {}", cmd.to_str());
+//! }
+//! ```
 use zed_extension_api as zed;
 
 #[derive(Copy, Clone)]

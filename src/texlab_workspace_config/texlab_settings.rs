@@ -1,3 +1,10 @@
+//! Types for (de)serializing the TeXLab language server workspace settings
+//!
+//! Documentation: https://github.com/latex-lsp/texlab/wiki/Configuration
+//!
+//! The `ForwardSearchSettings` is especially relevant outside this module,
+//! as it can be modified based on the detected PDF previewer.
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::vec::Vec;

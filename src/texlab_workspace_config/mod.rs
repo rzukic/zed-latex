@@ -1,3 +1,14 @@
+//! This module provides functionality for managing and modifying the LSP settings for the Texlab language server.
+//!
+//! It handles:
+//! - Retrieving Texlab LSP settings for a given worktree
+//! - Modifying settings based on detected PDF previewers
+//! - Adding forward search settings when appropriate (never overriding user-provided settings)
+//!
+//! The settings modifications are focused on enabling build-on-save and forward search
+//! features when a PDF previewer is detected, while being careful not to override any
+//! existing user configurations.
+
 pub mod preview_presets;
 mod texlab_settings;
 
@@ -5,6 +16,14 @@ use crate::LatexExtension;
 use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
 use zed_extension_api::{self as zed, serde_json};
 
+/// Retrieves and potentially modifies the texlab LSP settings for a given worktree.
+///
+/// The output is affected by whether a previewer was detected and recorded in the LatexExtension.
+///
+/// Returns either:
+/// - The original settings if no previewer is detected
+/// - Modified settings with forward search and build settings if a previewer exists
+/// - Error string if settings deserialization fails
 pub fn get(
     latex_extension: &mut LatexExtension,
     worktree: &zed_extension_api::Worktree,
