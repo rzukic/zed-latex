@@ -1,4 +1,4 @@
-use crate::texlab_settings::*;
+use super::texlab_settings::*;
 use crate::zed_command::CommandName;
 use chrono::TimeZone;
 use chrono::Utc;
