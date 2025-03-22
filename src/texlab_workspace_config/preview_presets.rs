@@ -14,24 +14,22 @@ use std::time::SystemTime;
 use zed_extension_api as zed;
 
 /// Represents different types of PDF preview applications that this Zed extension supports for previewing built LaTeX documents.
-///
-/// # Variants
-/// * `Zathura` - The Zathura document viewer
-/// * `Skim` - PDF viewer for macOS with SyncTeX support
-/// * `Sioyek` - PDF viewer optimized for technical documents
-/// * `QPDFView` - Tabbed document viewer
-/// * `Okular` - Universal document viewer for KDE
-/// * `SumatraPDF` - PDF viewer for Windows
-/// * `Evince` - GNOME document viewer
 #[allow(dead_code)]
 pub enum Preview {
+    /// PDF viewer popular in minimalistic linux installs
     Zathura,
+    /// Recommended PDF viewer for macOS
     Skim,
     Sioyek,
     QPDFView,
+    /// KDE document viewer
     Okular,
+    /// PDF viewer for Windows
     SumatraPDF,
-    Evince { evince_synctex_path: String },
+    /// GNOME document viewer
+    Evince {
+        evince_synctex_path: String,
+    },
 }
 
 impl Preview {
