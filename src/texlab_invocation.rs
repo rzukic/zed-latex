@@ -1,10 +1,24 @@
-//! This module's main responsibility is providing the command to start the `texlab` language server, as well as the appropriate environment.
+//! This module's main responsibility is providing the command to start the `texlab` language server,
+//! as well as the appropriate environment.
 //! If necessary, it will download the latest release of `texlab` from GitHub.
 //!
 //! [`texlab`]: https://github.com/latex-lsp/texlab
 use super::LatexExtension;
 use zed_extension_api as zed;
 
+/// Constructs the command to start the `texlab` language server.
+///
+/// `texlab` is searched for, or downloaded, following this order of priority:
+/// 1. Use a user-provided path from settings
+/// 2. Use a binary available on PATH
+/// 3. Use a previously downloaded binary (from number 4 in a previous run)
+/// 4. Download the latest release from GitHub
+///   (using previously downloaded release if still current, or as a fallback to any network errors)
+///
+/// In all cases apart from the user-provided case, provide no CLI arguments to `texlab`.
+///
+/// This also adjusts the `TEXINPUTS` environment variable if
+/// "lsp.texlab.initialization_options.extra_tex_inputs" zed setting is provided.
 pub fn command(
     latex_extension: &mut LatexExtension,
     language_server_id: &zed_extension_api::LanguageServerId,

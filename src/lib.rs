@@ -7,7 +7,7 @@ use zed_extension_api as zed;
 
 #[derive(Default)]
 struct LatexExtension {
-    /// cached path to the texlab language server that was downloaded
+    /// Cached path to the texlab language server that was downloaded
     /// from GitHub releases
     cached_texlab_path: Option<String>,
     /// Detected PDF previewer
@@ -19,14 +19,15 @@ struct LatexExtension {
 impl zed::Extension for LatexExtension {
     fn new() -> Self {
         Self::default()
+        // Although this would be a good place to check for the existence of a
+        // previewer and zed executable name, there is no access to a zed
+        // worktree which is needed to access to the environment and a
+        // `which`-like command via the zed extension API.
+        // Attempting to search for executables on PATH directly circumventing
+        // the zed extension API appears not to work presumably due to some
+        // sandboxing by wasmtime.
     }
 
-    /// Read user-provided settings for the language server path and arguments,
-    /// if present, and use them.
-    /// Otherwise, find `texlab` in the workspace path.
-    /// And if that fails, see if there is a cached path for `texlab`.
-    /// Finally if above fail, download the latest release of `texlab` from GitHub and cache it.
-    /// In all cases apart from the user-provided case, provide no arguments.
     fn language_server_command(
         &mut self,
         language_server_id: &zed::LanguageServerId,
