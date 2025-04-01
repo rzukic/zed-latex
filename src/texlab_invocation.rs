@@ -1,149 +1,76 @@
-mod preview_presets;
-mod texlab_settings;
-mod zed_command;
+//! This module's main responsibility is providing the command to start the `texlab` language server,
+//! as well as the appropriate environment.
+//! If necessary, it will download the latest release of `texlab` from GitHub.
+//!
+//! [`texlab`]: https://github.com/latex-lsp/texlab
+use super::LatexExtension;
+use zed_extension_api as zed;
 
-use preview_presets::*;
-use texlab_settings::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
-use zed_command::CommandName;
-use zed_extension_api::{self as zed, serde_json};
+/// Constructs the command to start the `texlab` language server.
+///
+/// `texlab` is searched for, or downloaded, following this order of priority:
+/// 1. Use a user-provided path from settings
+/// 2. Use a binary available on PATH
+/// 3. Use a previously downloaded binary (from number 4 in a previous run)
+/// 4. Download the latest release from GitHub
+///   (using previously downloaded release if still current, or as a fallback to any network errors)
+///
+/// In all cases apart from the user-provided case, provide no CLI arguments to `texlab`.
+///
+/// This also adjusts the `TEXINPUTS` environment variable if
+/// "lsp.texlab.initialization_options.extra_tex_inputs" zed setting is provided.
+pub fn command(
+    latex_extension: &mut LatexExtension,
+    language_server_id: &zed_extension_api::LanguageServerId,
+    worktree: &zed_extension_api::Worktree,
+) -> Result<zed_extension_api::Command, String> {
+    use zed::settings::BinarySettings;
+    let lsp_settings =
+        zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
 
-#[derive(Default)]
-struct LatexExtension {
-    /// cached path to the texlab language server that was downloaded
-    /// from GitHub releases
-    cached_texlab_path: Option<String>,
-    /// Detected PDF previewer
-    previewer: Option<Preview>,
-    /// Executable to invoke the zed editor (None if not on PATH)
-    zed_command: Option<CommandName>,
-}
+    let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options, worktree);
 
-impl zed::Extension for LatexExtension {
-    fn new() -> Self {
-        Self::default()
+    // No CLI args are provided to `texlab` by default, but they can be provided in the settings.
+    let args = match lsp_settings.binary {
+        Some(BinarySettings {
+            arguments: Some(ref args),
+            ..
+        }) => args.clone(),
+        _ => vec![],
+    };
+
+    // First priority for texlab executable: user-provided path.
+    if let Some(BinarySettings {
+        path: Some(ref path),
+        ..
+    }) = lsp_settings.binary
+    {
+        let command = path.clone();
+        return Ok(zed::Command { command, args, env });
     }
 
-    /// Read user-provided settings for the language server path and arguments,
-    /// if present, and use them.
-    /// Otherwise, find `texlab` in the workspace path.
-    /// And if that fails, see if there is a cached path for `texlab`.
-    /// Finally if above fail, download the latest release of `texlab` from GitHub and cache it.
-    /// In all cases apart from the user-provided case, provide no arguments.
-    fn language_server_command(
-        &mut self,
-        language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> zed::Result<zed::Command> {
-        use zed::settings::BinarySettings;
+    // Second priority for texlab: already installed and on PATH.
+    if let Some(command) = worktree.which("texlab") {
+        return Ok(zed::Command { command, args, env });
+    }
 
-        // Check for the existence of a previewer, and zed executable name
-        // (this has nothing to do with the language server but this
-        // is a convenient place to minimize the number of times this
-        // is done).
-        self.previewer = Preview::determine(worktree);
-        self.zed_command = CommandName::determine(worktree);
-
-        let lsp_settings =
-            zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
-
-        let env = texlab_env::get_from_init_opts(lsp_settings.initialization_options, worktree);
-
-        // No CLI args are provided to `texlab` by default, but they can be provided in the settings.
-        let args = match lsp_settings.binary {
-            Some(BinarySettings { arguments: Some(ref args), .. }) => args.clone(),
-            _ => vec![],
-        };
-
-        // First priority for texlab executable: user-provided path.
-        if let Some(BinarySettings { path: Some(ref path), .. }) = lsp_settings.binary {
+    // Third priority for texlab: cached path (from download in final priority).
+    if let Some(ref path) = latex_extension.cached_texlab_path {
+        if std::fs::metadata(path).is_ok() {
             let command = path.clone();
             return Ok(zed::Command { command, args, env });
         }
-
-        // Second priority for texlab: already installed and on PATH.
-        if let Some(command) = worktree.which("texlab") {
-            return Ok(zed::Command { command, args, env });
-        }
-
-        // Third priority for texlab: cached path (from download in final priority).
-        if let Some(ref path) = self.cached_texlab_path {
-            if std::fs::metadata(path).is_ok() {
-                let command = path.clone();
-                return Ok(zed::Command { command, args, env });
-            }
-        }
-
-        // Final priority for texlab: download from GitHub releases.
-        let binary_path = acquire_latest_texlab(language_server_id)?;
-        self.cached_texlab_path = Some(binary_path.clone());
-
-        Ok(zed::Command { command: binary_path, args, env })
     }
 
-    fn language_server_workspace_configuration(
-        &mut self,
-        _language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> zed::Result<Option<zed::serde_json::Value>> {
-        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.settings.clone())
-            .unwrap_or_default();
+    // Final priority for texlab: download from GitHub releases.
+    let binary_path = acquire_latest_texlab(language_server_id)?;
+    latex_extension.cached_texlab_path = Some(binary_path.clone());
 
-        match self.previewer {
-            None => Ok(Some(settings)),
-            // Only adjust settings if a previewer is detected.
-            Some(ref previewer) => {
-                match serde_json::from_value::<Option<WorkspaceSettings>>(settings.clone()) {
-                    // User has provided forward search settings, do not override.
-                    Ok(Some(WorkspaceSettings {
-                        texlab:
-                            Some(TexlabSettings {
-                                forward_search: Some(_),
-                                ..
-                            }),
-                    })) => Ok(Some(settings)),
-                    // No settings provided, construct settings from scratch with build-on-save
-                    // and forward search with detected previewer.
-                    Ok(None | Some(WorkspaceSettings { texlab: None })) => Ok(Some(
-                        serde_json::to_value(WorkspaceSettings {
-                            texlab: Some(TexlabSettings {
-                                build: Some(TexlabBuildSettings::build_and_search_on()),
-                                forward_search: Some(
-                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
-                                ),
-                                ..Default::default()
-                            }),
-                        })
-                        .unwrap_or_default(),
-                    )),
-                    // User has provided some settings, but not forward search, which
-                    // can be filled in for detected previewer; and enable build-on-save
-                    // and forward search after build unless explicitly disabled.
-                    Ok(Some(WorkspaceSettings {
-                        texlab: Some(texlab_settings_without_forward_search),
-                    })) => Ok(Some(
-                        serde_json::to_value(WorkspaceSettings {
-                            texlab: Some(TexlabSettings {
-                                forward_search: Some(
-                                    previewer.create_preset(self.zed_command.unwrap_or_default()),
-                                ),
-                                build: Some(
-                                    texlab_settings_without_forward_search
-                                        .build
-                                        .unwrap_or_default()
-                                        .switch_on_onsave_fields_if_not_set(),
-                                ),
-                                ..texlab_settings_without_forward_search
-                            }),
-                        })
-                        .unwrap_or_default(),
-                    )),
-                    Err(e) => Err(format!("Error deserializing workspace settings: {}", e)),
-                }
-            }
-        }
-    }
+    Ok(zed::Command {
+        command: binary_path,
+        args,
+        env,
+    })
 }
 
 // Download the latest release of `texlab` from GitHub and return the path to the binary,
@@ -263,6 +190,15 @@ fn find_previously_downloaded_texlab_release(platform: zed::Os) -> Result<String
         .ok_or("Failed to acquire latest texlab release and no cached version found".into())
 }
 
+/// `texlab_env` module contains functions and structs related to setting the environment variables
+/// to set when starting the `texlab` language server.
+///
+/// The `texlab` language server can use the `TEXINPUTS` environment variable to find files.
+/// So this Zed extensions allows adding additional directories to the `TEXINPUTS` environment variable,
+/// by providing a list of directories in the `extra_tex_inputs` field of the `initialization_options`
+/// for the `texlab` language server.
+/// It is done this way because `texlab` does not require any initialization options, and the Zed extension API
+/// does not provide a way to provide arbitrary settings to an extension directly (as of writing).
 mod texlab_env {
     use serde::{Deserialize, Serialize};
     use zed_extension_api::{
@@ -325,5 +261,3 @@ mod texlab_env {
         vec![]
     }
 }
-
-zed::register_extension!(LatexExtension);
