@@ -285,6 +285,20 @@
     (_) @comment.todo.text))
   (#match? @_name "^\\\\.?.?todo$"))
 
+((generic_command
+  command: (command_name) @_name @function.added
+  arg: (curly_group
+    (_) @changes.added))
+  (#eq? @_name "\\added"))
+
+((generic_command
+  command: (command_name) @_name @function.deleted
+  arg: (curly_group
+    (_) @changes.deleted))
+  (#eq? @_name "\\deleted"))
+
+;; File incl
+
 ;; File inclusion commands
 (class_include
   command: _ @keyword.import
