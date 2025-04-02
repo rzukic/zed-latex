@@ -279,6 +279,12 @@
     (_) @emphasis.strong))
   (#any-of? @_name "\\textbf" "\\mathbf"))
 
+((generic_command
+  command: (command_name) @_name @function.todo
+  arg: (curly_group
+    (_) @comment.todo.text))
+  (#match? @_name "^\\\\.?.?todo$"))
+
 ;; File inclusion commands
 (class_include
   command: _ @keyword.import
