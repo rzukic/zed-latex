@@ -279,11 +279,12 @@
     (_) @emphasis.strong))
   (#any-of? @_name "\\textbf" "\\mathbf"))
 
-((generic_command
-  command: (command_name) @_name @function.todo
+(todo
+  command: _ @function.todo
+  options: (brack_group
+    (_) @comment.todo.options)?
   arg: (curly_group
-    (_) @comment.todo.text))
-  (#match? @_name "^\\\\.?.?todo$"))
+      (_) @comment.todo.text))
 
 ((generic_command
   command: (command_name) @_name @function.added
