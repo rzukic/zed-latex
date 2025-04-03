@@ -297,6 +297,11 @@
     (_) @changes.deleted))
   (#eq? @_name "\\deleted"))
 
+(changes_replaced
+  command: _ @function.replaced
+  text_added: (curly_group (_) @changes.added)
+  text_deleted: (curly_group (_) @changes.deleted))
+
 ;; File incl
 
 ;; File inclusion commands
