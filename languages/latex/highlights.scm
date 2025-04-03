@@ -80,7 +80,7 @@
 
 (theorem_definition
   command: _ @function.macro
-  name: (curly_group_text
+  name: (curly_group_text_list
     (_) @constant)
   title: (curly_group (_) @title)?
   counter: (brack_group_text (_) @constant)?)
