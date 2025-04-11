@@ -4,6 +4,7 @@
 //! - Retrieving Texlab LSP settings for a given worktree
 //! - Modifying settings based on detected PDF previewers
 //! - Adding forward search settings when appropriate (never overriding user-provided settings)
+//! - Providing default build command if not provided
 //!
 //! The settings modifications are focused on enabling build-on-save and forward search
 //! features when a PDF previewer is detected, while being careful not to override any
@@ -14,78 +15,83 @@ mod types;
 
 use crate::LatexExtension;
 use types::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
-use zed_extension_api::{self as zed, serde_json};
+use zed_extension_api::serde_json::{from_value, Value};
 
 /// Retrieves and potentially modifies the texlab LSP settings for a given worktree.
 ///
 /// The output is affected by whether a previewer was detected and recorded in the LatexExtension.
+/// The build command is also defined if not provided.
 ///
 /// Returns either:
 /// - The original settings if no previewer is detected
 /// - Modified settings with forward search and build settings if a previewer exists
-/// - Error string if settings deserialization fails
+/// - Error string if settings deserialization fails (which means the settings are invalid)
 pub fn get(
     latex_extension: &mut LatexExtension,
-    worktree: &zed_extension_api::Worktree,
-) -> Result<Option<serde_json::Value>, String> {
-    let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
-        .ok()
-        .and_then(|lsp_settings| lsp_settings.settings.clone())
+    lsp_texlab_settings: Value,
+) -> Result<WorkspaceSettings, String> {
+    let provided_texlab_settings = from_value::<Option<WorkspaceSettings>>(lsp_texlab_settings)
+        .map_err(|err| err.to_string())? // Do not silently pass settings on when deserialization fails anymore
+        .unwrap_or_default()
+        .texlab
         .unwrap_or_default();
 
-    match latex_extension.previewer {
-        None => Ok(Some(settings)),
+    let texlab_settings_with_build_default = match provided_texlab_settings {
+        TexlabSettings {
+            build:
+                Some(TexlabBuildSettings {
+                    executable: Some(_),
+                    ..
+                }),
+            ..
+        } => provided_texlab_settings,
+        _ => TexlabSettings {
+            build: Some(TexlabBuildSettings {
+                executable: Some("latexmk".to_string()),
+                args: Some(vec![
+                    "-e".into(),
+                    "$pdf_mode = 1 unless $pdf_mode != 0;".into(),
+                    "-interaction=nonstopmode".into(),
+                    "-synctex=1".into(),
+                    "%f".into(),
+                ]),
+                ..provided_texlab_settings.build.unwrap_or_default()
+            }),
+            ..provided_texlab_settings
+        },
+    };
+
+    // Determine previewer related settings (when appropriate)
+    let settings_with_previewer = match latex_extension.previewer {
+        None => texlab_settings_with_build_default,
         // Only adjust settings if a previewer is detected.
         Some(ref previewer) => {
-            match serde_json::from_value::<Option<WorkspaceSettings>>(settings.clone()) {
+            match texlab_settings_with_build_default {
                 // User has provided forward search settings, do not override.
-                Ok(Some(WorkspaceSettings {
-                    texlab:
-                        Some(TexlabSettings {
-                            forward_search: Some(_),
-                            ..
-                        }),
-                })) => Ok(Some(settings)),
-                // No settings provided, construct settings from scratch with build-on-save
-                // and forward search with detected previewer.
-                Ok(None | Some(WorkspaceSettings { texlab: None })) => Ok(Some(
-                    serde_json::to_value(WorkspaceSettings {
-                        texlab: Some(TexlabSettings {
-                            build: Some(TexlabBuildSettings::build_and_search_on()),
-                            forward_search: Some(
-                                previewer
-                                    .create_preset(latex_extension.zed_command.unwrap_or_default()),
-                            ),
-                            ..Default::default()
-                        }),
-                    })
-                    .unwrap_or_default(),
-                )),
-                // User has provided some settings, but not forward search, which
+                TexlabSettings {
+                    forward_search: Some(_),
+                    ..
+                } => texlab_settings_with_build_default,
+                // User has not provided forward search settings, which
                 // can be filled in for detected previewer; and enable build-on-save
                 // and forward search after build unless explicitly disabled.
-                Ok(Some(WorkspaceSettings {
-                    texlab: Some(texlab_settings_without_forward_search),
-                })) => Ok(Some(
-                    serde_json::to_value(WorkspaceSettings {
-                        texlab: Some(TexlabSettings {
-                            forward_search: Some(
-                                previewer
-                                    .create_preset(latex_extension.zed_command.unwrap_or_default()),
-                            ),
-                            build: Some(
-                                texlab_settings_without_forward_search
-                                    .build
-                                    .unwrap_or_default()
-                                    .switch_on_onsave_fields_if_not_set(),
-                            ),
-                            ..texlab_settings_without_forward_search
-                        }),
-                    })
-                    .unwrap_or_default(),
-                )),
-                Err(e) => Err(format!("Error deserializing workspace settings: {}", e)),
+                texlab_settings_without_forward_search => TexlabSettings {
+                    forward_search: Some(
+                        previewer.create_preset(latex_extension.zed_command.unwrap_or_default()),
+                    ),
+                    build: Some(
+                        texlab_settings_without_forward_search
+                            .build
+                            .unwrap_or_default()
+                            .switch_on_onsave_fields_if_not_set(),
+                    ),
+                    ..texlab_settings_without_forward_search
+                },
             }
         }
-    }
+    };
+
+    Ok(WorkspaceSettings {
+        texlab: Some(settings_with_previewer),
+    })
 }

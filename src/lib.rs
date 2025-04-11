@@ -3,7 +3,7 @@ mod zed_command;
 
 use texlab_workspace_config::preview_presets::Preview;
 use zed_command::CommandName;
-use zed_extension_api as zed;
+use zed_extension_api::{self as zed, serde_json};
 
 #[derive(Default)]
 struct LatexExtension {
@@ -48,7 +48,14 @@ impl zed::Extension for LatexExtension {
         _language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> zed::Result<Option<zed::serde_json::Value>> {
-        texlab_workspace_config::get(self, worktree)
+        let settings = zed::settings::LspSettings::for_worktree("texlab", worktree)
+            .ok()
+            .and_then(|lsp_settings| lsp_settings.settings.clone())
+            .unwrap_or_default();
+
+        Ok(Some(
+            serde_json::to_value(texlab_workspace_config::get(self, settings)?).unwrap_or_default(),
+        ))
     }
 }
 
