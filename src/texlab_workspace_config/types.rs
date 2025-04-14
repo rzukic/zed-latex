@@ -51,14 +51,6 @@ pub struct TexlabBuildSettings {
 }
 
 impl TexlabBuildSettings {
-    pub fn build_and_search_on() -> Self {
-        Self {
-            forward_search_after: Some(true),
-            on_save: Some(true),
-            ..Default::default()
-        }
-    }
-
     /// When autoconfiguring preview settings, the `texlab.build.forwardSearchAfter`
     /// and `texlab.build.onSave` fields should be set to `true` if they are not already set.
     /// so that the user can see what is happening.
