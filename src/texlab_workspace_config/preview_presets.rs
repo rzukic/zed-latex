@@ -107,7 +107,7 @@ impl Preview {
                 args: Some(vec!["--unique".to_string(), "%p#src:%f:%l:1".to_string()]),
             },
             Preview::Evince{ ref evince_synctex_path} => TexlabForwardSearchSettings {
-                executable: Some("python".to_string()),
+                executable: Some("python3".to_string()),
                 args: Some(vec![
                     evince_synctex_path.clone(),
                     "-f".to_string(),
