@@ -80,7 +80,7 @@
 
 (theorem_definition
   command: _ @function.macro
-  name: (curly_group_text
+  name: (curly_group_text_list
     (_) @constant)
   title: (curly_group (_) @title)?
   counter: (brack_group_text (_) @constant)?)
@@ -93,59 +93,59 @@
 (label_definition
   command: _ @function.macro
   name: (curly_group_text
-    (_) @constant))
+    (_) @constant.label))
 
 (label_reference_range
   command: _ @function.macro
   from: (curly_group_text
     (_) @constant)
   to: (curly_group_text
-    (_) @constant))
+    (_) @constant.label))
 
 (label_reference
   command: _ @function.macro
   names: (curly_group_text_list
-    (_) @constant))
+    (_) @constant.label))
 
 (label_number
   command: _ @function.macro
   name: (curly_group_text
     (_) @constant)
-  number: (_) @constant)
+  number: (_) @constant.label)
 
 (citation
   command: _ @function.macro
-  keys: (curly_group_text_list) @constant)
+  keys: (curly_group_text_list) @constant.citation)
 
 (label_definition
   name: (curly_group_text
     (text
-      word: (operator "-") @constant)))
+      word: (operator "-") @constant.label)))
 
 (label_definition
   name: (curly_group_text
     (text
-      word: (subscript "_" @constant))))
+      word: (subscript "_" @constant.label))))
 
 (label_definition
   name: (curly_group_text
     (text
-      word: (superscript "^" @constant))))
+      word: (superscript "^" @constant.label))))
 
 (label_reference
   names: (curly_group_text_list
     (text
-      word: (operator "-") @constant)))
+      word: (operator "-") @constant.label)))
 
 (label_reference
   names: (curly_group_text_list
     (text
-      word: (subscript "_" @constant))))
+      word: (subscript "_" @constant.label))))
 
 (label_reference
   names: (curly_group_text_list
     (text
-      word: (superscript "^" @constant))))
+      word: (superscript "^" @constant.label))))
 
 ; Does not currently exist in the LaTeX grammar, maybe to come?:
 ;(hyperlink
@@ -278,6 +278,32 @@
   arg: (curly_group
     (_) @emphasis.strong))
   (#any-of? @_name "\\textbf" "\\mathbf"))
+
+(todo
+  command: _ @function.todo
+  options: (brack_group
+    (_) @comment.todo.options)?
+  arg: (curly_group
+      (_) @comment.todo.text))
+
+((generic_command
+  command: (command_name) @_name @function.added
+  arg: (curly_group
+    (_) @changes.added))
+  (#eq? @_name "\\added"))
+
+((generic_command
+  command: (command_name) @_name @function.deleted
+  arg: (curly_group
+    (_) @changes.deleted))
+  (#eq? @_name "\\deleted"))
+
+(changes_replaced
+  command: _ @function.replaced
+  text_added: (curly_group (_) @changes.added)
+  text_deleted: (curly_group (_) @changes.deleted))
+
+;; File incl
 
 ;; File inclusion commands
 (class_include
