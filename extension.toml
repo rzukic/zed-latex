@@ -21,4 +21,4 @@ commit = "ccfd77db0ed799b6c22c214fe9d2937f47bc8b34"
 
 [grammars.latex]
 repository = "https://github.com/latex-lsp/tree-sitter-latex"
-commit = "a6c812704b3d3e1541b0853aa0d6d561301320e1"
+commit = "f736d24d89acbd90092d92089e5171e6a449db40"
