@@ -4,8 +4,6 @@
 (caption
   command: _ @function)
 
-; Turn spelling on for text
-;(text) @none
 
 ; \text, \intertext, \shortintertext, ...
 (text_mode
@@ -20,10 +18,9 @@
   key: (_) @variable.parameter
   value: (_))
 
-; Does not currently exist in the LaTeX grammar, maybe to come?:
-;(curly_group_spec
-;  (text) @variable.parameter)
-;
+(curly_group_spec
+  (text) @variable.parameter)
+
 
 (brack_group_argc) @attribute
 
@@ -36,8 +33,7 @@
 
 "\\item" @punctuation.list_marker
 
-; Does not currently exist in the LaTeX grammar, maybe to come?:
-;(delimiter) @punctuation.delimiter
+(delimiter) @punctuation.delimiter
 
 (math_delimiter
   left_command: _ @punctuation.bracket
@@ -147,17 +143,9 @@
     (text
       word: (superscript "^" @constant.label))))
 
-; Does not currently exist in the LaTeX grammar, maybe to come?:
-;(hyperlink
-  ;command: (_) @function
-  ;uri: (_) @link_uri)
-((generic_command
-  command: (command_name) @_name @function
-  .
-  arg:
-    (curly_group
-      (_) @link_uri))
-  (#any-of? @_name "\\url" "\\href"))
+(hyperlink
+  command: _ @function
+  uri: (_) @link_uri)
 
 (glossary_entry_definition
   command: _ @function.macro
