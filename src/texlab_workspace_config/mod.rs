@@ -50,7 +50,7 @@ pub fn get(
                 executable: Some("latexmk".to_string()),
                 args: Some(vec![
                     "-e".into(),
-                    "$pdf_mode = 1 unless $pdf_mode != 0;".into(),
+                    "$pdf_mode = 1 unless $pdf_mode != 0; if ($ARGV[-1] =~ /\\.log$/ or $ARGV[-1] =~ /latexmkrc$/) { exit 0; };".into(),
                     "-interaction=nonstopmode".into(),
                     "-synctex=1".into(),
                     "%f".into(),
