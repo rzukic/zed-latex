@@ -111,7 +111,8 @@
 
 (citation
   command: _ @function.macro
-  keys: (curly_group_text_list) @constant.citation)
+  keys: (curly_group_text_list
+    (_) @constant.citation))
 
 (label_definition
   name: (curly_group_text
