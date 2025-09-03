@@ -12,3 +12,10 @@ chrono = "0.4.40"
 serde = "1.0.210"
 serde_with = "3.11.0"
 zed_extension_api = "0.1.0"
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
+strip = true # Ensures debug symbols are removed.
+
