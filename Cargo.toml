@@ -11,11 +11,10 @@ crate-type = ["cdylib"]
 chrono = "0.4.40"
 serde = "1.0.210"
 serde_with = "3.11.0"
-zed_extension_api = "0.1.0"
+zed_extension_api = "0.7.0"
 
 [profile.release]
 codegen-units = 1
 lto = true
 opt-level = 3
 strip = true
-

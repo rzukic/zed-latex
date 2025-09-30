@@ -24,13 +24,13 @@ pub fn command(
     language_server_id: &zed_extension_api::LanguageServerId,
     worktree: &zed_extension_api::Worktree,
 ) -> Result<zed_extension_api::Command, String> {
-    use zed::settings::BinarySettings;
+    use zed::settings::CommandSettings;
     let lsp_settings =
         zed::settings::LspSettings::for_worktree("texlab", worktree).unwrap_or_default();
 
     // No CLI args are provided to `texlab` by default, but they can be provided in the settings.
     let args = match lsp_settings.binary {
-        Some(BinarySettings {
+        Some(CommandSettings {
             arguments: Some(ref args),
             ..
         }) => args.clone(),
@@ -40,7 +40,7 @@ pub fn command(
     let env = Default::default();
 
     // First priority for texlab executable: user-provided path.
-    if let Some(BinarySettings {
+    if let Some(CommandSettings {
         path: Some(ref path),
         ..
     }) = lsp_settings.binary
