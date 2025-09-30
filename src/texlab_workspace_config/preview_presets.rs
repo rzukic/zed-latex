@@ -25,7 +25,9 @@ pub enum Preview {
     /// KDE document viewer
     Okular,
     /// PDF viewer for Windows
-    SumatraPDF,
+    SumatraPDF {
+        path: String,
+    },
     /// GNOME document viewer
     Evince {
         evince_synctex_path: String,
@@ -118,7 +120,16 @@ impl Preview {
                     format!("{} %%f:%%l", zed_command.to_str())
                 ]),
             },
-            _ => TexlabForwardSearchSettings::default(),
+            Preview::SumatraPDF{ ref path } => TexlabForwardSearchSettings {
+                executable: Some(path.clone()),
+                args: Some(vec![
+                    "-reuse-instance".to_string(),
+                    "%p".to_string(),
+                    "-forward-search".to_string(),
+                    "%f".to_string(),
+                    "%l".to_string()
+                ]),
+            },
         }
     }
 
@@ -145,6 +156,21 @@ impl Preview {
                 .is_some()
             {
                 return Some(Preview::Skim);
+            }
+        }
+
+        if platform == zed::Os::Windows {
+            let localappdata = worktree
+                .shell_env()
+                .iter()
+                .find(|&var| var.0 == "LOCALAPPDATA")?
+                .1
+                .clone();
+            let potential_sumatra_path = format!("{localappdata}\\SumatraPDF\\SumatraPDF.exe");
+            if worktree.which(&potential_sumatra_path).is_some() {
+                return Some(Preview::SumatraPDF {
+                    path: potential_sumatra_path,
+                });
             }
         }
 
@@ -219,17 +245,6 @@ impl Preview {
         if worktree.which("okular").is_some() {
             return Some(Preview::Okular);
         }
-
-        // Checking the existence of SumatraPDF will need
-        // the ability to find the user name
-        // if platform == zed::Os::Windows {
-        //     if worktree
-        //         .which("C:/Users/{User}/AppData/Local/SumatraPDF/SumatraPDF.exe")
-        //         .is_some()
-        //     {
-        //         return Some(Preview::SumatraPDF);
-        //     }
-        // }
 
         None
     }
