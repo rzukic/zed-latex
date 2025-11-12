@@ -2,14 +2,14 @@
   {
     "label": "latexmk",
     "command": "latexmk",
-    "args": ["-synctex=1", "-pdf", "-recorder", "$ZED_FILENAME"],
+    "args": ["-synctex=1", "-e", "\"\\$pdf_mode = 1 unless \\$pdf_mode != 0;\"", "-recorder", "$ZED_FILENAME"],
     "cwd": "$ZED_DIRNAME",
     "tags": ["latex-build"]
   },
   {
     "label": "latexmk (watch)",
     "command": "latexmk",
-    "args": ["-pvc", "-synctex=1", "-pdf", "-recorder", "$ZED_FILENAME"],
+    "args": ["-pvc", "-synctex=1", "-e", "\"\\$pdf_mode = 1 unless \\$pdf_mode != 0;\"", "-recorder", "$ZED_FILENAME"],
     "cwd": "$ZED_DIRNAME",
     "tags": ["latex-build"]
   },
