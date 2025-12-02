@@ -1,4 +1,5 @@
 mod texlab_invocation;
+mod texlab_workspace_config;
 mod zed_command;
 
 use texlab_workspace_config::preview_presets::Preview;
@@ -54,11 +55,14 @@ impl zed::Extension for LatexExtension {
             .unwrap_or_default();
 
         Ok(Some(
-            serde_json::to_value(texlab_workspace_config::get(self, settings)?).unwrap_or_default(),
+            serde_json::to_value(texlab_workspace_config::get(
+                &self.previewer,
+                self.zed_command.unwrap_or_default(),
+                settings,
+            )?)
+            .unwrap_or_default(),
         ))
     }
 }
-
-mod texlab_workspace_config;
 
 zed::register_extension!(LatexExtension);

@@ -13,8 +13,9 @@
 pub mod preview_presets;
 mod types;
 
-use crate::LatexExtension;
-use types::{TexlabBuildSettings, TexlabSettings, WorkspaceSettings};
+use crate::zed_command::CommandName;
+use preview_presets::Preview;
+use types::{TexlabBuildSettings, TexlabHoverSettings, TexlabSettings, WorkspaceSettings};
 use zed_extension_api::serde_json::{from_value, Value};
 
 /// Retrieves and potentially modifies the texlab LSP settings for a given worktree.
@@ -27,7 +28,8 @@ use zed_extension_api::serde_json::{from_value, Value};
 /// - Modified settings with forward search and build settings if a previewer exists
 /// - Error string if settings deserialization fails (which means the settings are invalid)
 pub fn get(
-    latex_extension: &mut LatexExtension,
+    previewer: &Option<Preview>,
+    zed_command: CommandName,
     lsp_texlab_settings: Value,
 ) -> Result<WorkspaceSettings, String> {
     let provided_texlab_settings = from_value::<Option<WorkspaceSettings>>(lsp_texlab_settings)
@@ -36,7 +38,51 @@ pub fn get(
         .texlab
         .unwrap_or_default();
 
-    let texlab_settings_with_build_default = match provided_texlab_settings {
+    let texlab_settings_with_defaults =
+        add_hover_default(add_build_default(provided_texlab_settings));
+
+    let settings_with_previewer = if let Some(ref previewer) = previewer {
+        add_preview(&previewer, zed_command, texlab_settings_with_defaults)
+    } else {
+        texlab_settings_with_defaults
+    };
+
+    Ok(WorkspaceSettings {
+        texlab: Some(settings_with_previewer),
+    })
+}
+
+/// Add previewer related settings to have forward and inverse search set up (if possible),
+/// but only if the user has not provided forward search settings themselves.
+fn add_preview(
+    previewer: &Preview,
+    zed_command: CommandName,
+    texlab_settings_with_defaults: TexlabSettings,
+) -> TexlabSettings {
+    match texlab_settings_with_defaults {
+        // User has provided forward search settings, do not override.
+        TexlabSettings {
+            forward_search: Some(_),
+            ..
+        } => texlab_settings_with_defaults,
+        // User has not provided forward search settings, which
+        // can be filled in for detected previewer; and enable build-on-save
+        // and forward search after build unless explicitly disabled.
+        texlab_settings_without_forward_search => TexlabSettings {
+            forward_search: Some(previewer.create_preset(zed_command)),
+            build: Some(
+                texlab_settings_without_forward_search
+                    .build
+                    .unwrap_or_default()
+                    .switch_on_onsave_fields_if_not_set(),
+            ),
+            ..texlab_settings_without_forward_search
+        },
+    }
+}
+
+fn add_build_default(input_settings: TexlabSettings) -> TexlabSettings {
+    match input_settings {
         TexlabSettings {
             build:
                 Some(TexlabBuildSettings {
@@ -44,7 +90,7 @@ pub fn get(
                     ..
                 }),
             ..
-        } => provided_texlab_settings,
+        } => input_settings,
         _ => TexlabSettings {
             build: Some(TexlabBuildSettings {
                 executable: Some("latexmk".to_string()),
@@ -55,43 +101,22 @@ pub fn get(
                     "-synctex=1".into(),
                     "%f".into(),
                 ]),
-                ..provided_texlab_settings.build.unwrap_or_default()
+                ..input_settings.build.unwrap_or_default()
             }),
-            ..provided_texlab_settings
+            ..input_settings
         },
-    };
+    }
+}
 
-    // Determine previewer related settings (when appropriate)
-    let settings_with_previewer = match latex_extension.previewer {
-        None => texlab_settings_with_build_default,
-        // Only adjust settings if a previewer is detected.
-        Some(ref previewer) => {
-            match texlab_settings_with_build_default {
-                // User has provided forward search settings, do not override.
-                TexlabSettings {
-                    forward_search: Some(_),
-                    ..
-                } => texlab_settings_with_build_default,
-                // User has not provided forward search settings, which
-                // can be filled in for detected previewer; and enable build-on-save
-                // and forward search after build unless explicitly disabled.
-                texlab_settings_without_forward_search => TexlabSettings {
-                    forward_search: Some(
-                        previewer.create_preset(latex_extension.zed_command.unwrap_or_default()),
-                    ),
-                    build: Some(
-                        texlab_settings_without_forward_search
-                            .build
-                            .unwrap_or_default()
-                            .switch_on_onsave_fields_if_not_set(),
-                    ),
-                    ..texlab_settings_without_forward_search
-                },
-            }
-        }
-    };
-
-    Ok(WorkspaceSettings {
-        texlab: Some(settings_with_previewer),
-    })
+/// Adds glyph preview in hover of symbol commands (used to be texlab default)
+fn add_hover_default(input_settings: TexlabSettings) -> TexlabSettings {
+    match input_settings {
+        TexlabSettings { hover: Some(_), .. } => input_settings,
+        _ => TexlabSettings {
+            hover: Some(TexlabHoverSettings {
+                symbols: "glyph".to_string(),
+            }),
+            ..input_settings
+        },
+    }
 }

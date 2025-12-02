@@ -24,6 +24,7 @@ pub struct TexlabSettings {
     pub build: Option<TexlabBuildSettings>,
     pub forward_search: Option<TexlabForwardSearchSettings>,
     pub chktex: Option<Value>,
+    pub hover: Option<TexlabHoverSettings>,
     pub diagnostics: Option<Value>,
     pub diagnostics_delay: Option<Value>,
     pub symbols: Option<Value>,
@@ -48,6 +49,13 @@ pub struct TexlabBuildSettings {
     pub aux_directory: Option<Value>,
     pub log_directory: Option<Value>,
     pub pdf_directory: Option<Value>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct TexlabHoverSettings {
+    pub symbols: String,
 }
 
 impl TexlabBuildSettings {
