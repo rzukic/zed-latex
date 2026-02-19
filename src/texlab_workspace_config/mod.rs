@@ -91,20 +91,28 @@ fn add_build_default(input_settings: TexlabSettings) -> TexlabSettings {
                 }),
             ..
         } => input_settings,
-        _ => TexlabSettings {
-            build: Some(TexlabBuildSettings {
-                executable: Some("latexmk".to_string()),
-                args: Some(vec![
-                    "-e".into(),
-                    "$pdf_mode = 1 unless $pdf_mode != 0; if ($ARGV[-1] =~ /\\.log$/ or $ARGV[-1] =~ /latexmkrc$/) { exit 0; };".into(),
+        _ => {
+            let mut args = input_settings
+                .build
+                .as_ref()
+                .and_then(|b| b.args.clone())
+                .unwrap_or(vec![
                     "-interaction=nonstopmode".into(),
                     "-synctex=1".into(),
                     "%f".into(),
-                ]),
-                ..input_settings.build.unwrap_or_default()
-            }),
-            ..input_settings
-        },
+                ]);
+            args.insert(0, "-e".into());
+            args.insert(1, "$pdf_mode = 1 unless $pdf_mode != 0; if ($ARGV[-1] =~ /\\.log$/ or $ARGV[-1] =~ /latexmkrc$/) { exit 0; };".into());
+
+            TexlabSettings {
+                build: Some(TexlabBuildSettings {
+                    executable: Some("latexmk".to_string()),
+                    args: Some(args),
+                    ..input_settings.build.unwrap_or_default()
+                }),
+                ..input_settings
+            }
+        }
     }
 }
 
