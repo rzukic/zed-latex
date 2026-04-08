@@ -64,6 +64,7 @@ impl Preview {
                     "/Applications/Skim.app/Contents/SharedSupport/displayline".to_string(),
                 ),
                 args: Some(vec![
+                    "-g".to_string(),
                     "-r".to_string(),
                     "%l".to_string(),
                     "%p".to_string(),
