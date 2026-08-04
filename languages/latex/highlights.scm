@@ -146,7 +146,8 @@
 
 (hyperlink
   command: _ @function
-  uri: (_) @link_uri)
+  uri: (curly_group_uri
+    (uri) @link_uri))
 
 (glossary_entry_definition
   command: _ @function.macro
