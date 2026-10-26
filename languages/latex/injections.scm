@@ -43,3 +43,7 @@
   arg: (curly_group (_) @content)
   (#set! "language" "lua")
   (#any-of? @_command "\\directlua" "\\latelua"))
+
+(luacode_environment
+  code: (source_code) @content
+  (#set! "language" "lua"))
